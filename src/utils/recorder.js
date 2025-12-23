@@ -5,8 +5,14 @@ export class AudioRecorder {
         this.stream = null;
     }
 
+    isRecording() {
+        return this.mediaRecorder?.state === 'recording';
+    }
+
     async start() {
         try {
+            if (this.isRecording()) return;
+
             this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.mediaRecorder = new MediaRecorder(this.stream);
             this.audioChunks = [];
@@ -24,17 +30,31 @@ export class AudioRecorder {
     }
 
     stop() {
-        return new Promise((resolve) => {
+        if (!this.mediaRecorder) {
+            return Promise.reject(new Error('Recorder not initialized'));
+        }
+
+        return new Promise((resolve, reject) => {
             this.mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
                 const audioUrl = URL.createObjectURL(audioBlob);
 
-                // Stop all tracks to release the microphone
-                this.stream.getTracks().forEach(track => track.stop());
+                if (this.stream) {
+                    this.stream.getTracks().forEach((track) => track.stop());
+                }
+
+                this.mediaRecorder = null;
+                this.stream = null;
+                this.audioChunks = [];
 
                 resolve({ blob: audioBlob, url: audioUrl });
                 console.log("Recording stopped");
             };
+
+            this.mediaRecorder.onerror = (event) => {
+                reject(event.error || new Error('Recording error'));
+            };
+
             this.mediaRecorder.stop();
         });
     }
