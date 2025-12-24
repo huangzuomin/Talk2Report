@@ -1,103 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Talk2Report | 动嘴成稿</title>
-  <link rel="stylesheet" href="./style.css">
-</head>
-<body>
-  <div id="app">
-    <header>
-      <h1>Talk2Report</h1>
-      <p class="subtitle">动嘴成稿｜年终总结语音访谈助手</p>
-    </header>
-
-    <main id="main-content">
-      <!-- 初始参数选择界面 -->
-      <section id="setup-view" class="view">
-        <div class="card">
-          <h2>访谈配置</h2>
-          <div class="form-group">
-            <label for="audience">受众对象</label>
-            <select id="audience">
-              <option value="leader">领导</option>
-              <option value="hr">HR / 考评组</option>
-              <option value="team">团队成员</option>
-              <option value="public">公开 / 朋友圈</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="tone">文风风格</label>
-            <select id="tone">
-              <option value="plain">平实稳重</option>
-              <option value="official">正式商务</option>
-              <option value="warm">温和感性</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="length">字数期望</label>
-            <input type="number" id="length" value="1200" step="100">
-          </div>
-          <button id="start-btn" class="primary-btn">开始访谈</button>
-        </div>
-      </section>
-
-      <!-- 访谈互动界面 -->
-      <section id="interview-view" class="view hidden">
-        <div class="interview-container">
-          <div class="progress-bar">
-            <div id="progress-fill"></div>
-          </div>
-          <div class="question-card">
-            <span id="question-index">Q1 / 12</span>
-            <h2 id="question-text">加载中...</h2>
-            
-            <div class="answer-area">
-              <div id="transcript-container" class="transcript-box">
-                <textarea id="answer-input" placeholder="点击下方录音或直接在此编辑..."></textarea>
-              </div>
-            </div>
-
-            <div class="controls">
-              <button id="record-btn" class="record-btn">
-                <div class="mic-icon"></div>
-                <span class="btn-label">按住说话</span>
-              </button>
-              <div class="action-btns">
-                <button id="prev-btn" class="secondary-btn">上一题</button>
-                <button id="next-btn" class="secondary-btn">下一题 / 跳过</button>
-              </div>
-            </div>
-            
-            <div id="status-msg" class="status-msg"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 结果展示界面 -->
-      <section id="result-view" class="view hidden">
-        <div class="result-container">
-          <h2>生成结果</h2>
-          <div class="tabs">
-            <button class="tab-btn active" data-target="draft_main">正式稿</button>
-            <button class="tab-btn" data-target="draft_short">精简版</button>
-            <button class="tab-btn" data-target="outline">结构大纲</button>
-            <button class="tab-btn" data-target="ppt_outline">PPT 提纲</button>
-          </div>
-          <div class="tab-content">
-            <div id="result-text" class="result-box">内容生成中...</div>
-          </div>
-          <div class="result-actions">
-            <button id="copy-btn" class="primary-btn">复制内容</button>
-            <button id="download-btn" class="secondary-btn">下载 Markdown</button>
-            <button id="reset-btn" class="danger-btn">清除并重置</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-  <script type="module" src="/main.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Talk2Report | 动嘴成稿</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
