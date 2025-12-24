@@ -47,6 +47,7 @@ function App() {
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [followUpHistory, setFollowUpHistory] = useState([]);
 
+  // 核心修复：标准化 ID，防止 QNaN [cite: 35, 50, 641]
   const normalizeQuestionId = (id, indexFallback = currentIndex) => {
     if (typeof id === 'string' && id.trim()) return id.trim();
     const safeIndex = Number.isFinite(indexFallback) ? indexFallback : 0;
@@ -135,6 +136,7 @@ function App() {
     setIsFollowUp(false);
   };
 
+  // 输入守卫：如果答案为空，直接跳过 API 调用推进到下一主线问题 [cite: 13, 35, 138]
   const handleNext = async () => {
     const trimmed = currentAnswerText.trim();
     if (!trimmed) {
@@ -248,7 +250,7 @@ function App() {
       } else if (result.done) {
         await handleGenerate();
       } else {
-        // 后端未返回下一题，尝试顺序推进
+        // 后端未返回下一题，尝试顺序推进 [cite: 716]
         const nextIndex = Math.min(currentIndex + 1, QUESTIONS.length - 1);
         const fallbackId = `Q${nextIndex + 1}`;
         setCurrentIndex(nextIndex);
@@ -396,6 +398,7 @@ function App() {
                         <button id="next-btn" className="primary-btn" onClick={handleNext} disabled={isLoadingNext}>
                           {isLoadingNext ? 'AI 分析中...' : '提交本题 / 下一步'}
                         </button>
+                        {/* 强化跳过追问按钮 [cite: 19, 36] */}
                         {isFollowUp && (
                           <button className="ghost-btn" onClick={handleSkipFollowUp} disabled={isLoadingNext}>
                             跳过追问，继续主线
