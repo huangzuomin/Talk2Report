@@ -183,11 +183,14 @@ button:disabled {
     gap: 1.5rem;
 }
 
+/* 合并后的 action-btns，包含对齐和换行支持 */
 .action-btns {
     display: flex;
     gap: 1rem;
     width: 100%;
     justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .question-meta {
@@ -217,6 +220,16 @@ button:disabled {
     color: var(--text-muted);
     text-align: center;
     min-height: 1.5rem;
+}
+
+/* 新增的 ghost-btn，用于“跳过追问” */
+.ghost-btn {
+    padding: 0.35rem 0.75rem;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
 }
 
 /* Result Styles */

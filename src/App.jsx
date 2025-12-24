@@ -47,6 +47,13 @@ function App() {
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [followUpHistory, setFollowUpHistory] = useState([]);
 
+  // 核心修复：标准化 ID，防止 QNaN [cite: 35, 50, 641]
+  const normalizeQuestionId = (id, indexFallback = currentIndex) => {
+    if (typeof id === 'string' && id.trim()) return id.trim();
+    const safeIndex = Number.isFinite(indexFallback) ? indexFallback : 0;
+    return `Q${Math.min(QUESTIONS.length, Math.max(1, safeIndex + 1))}`;
+  };
+
   const sessionIdRef = useRef(`s_${Math.random().toString(36).slice(2, 11)}`);
 
   useEffect(() => {
@@ -124,13 +131,32 @@ function App() {
     if (currentIndex === 0) return;
     const prevIndex = Math.max(currentIndex - 1, 0);
     setCurrentIndex(prevIndex);
-    setCurrentQuestionId(`Q${prevIndex + 1}`);
+    setCurrentQuestionId(normalizeQuestionId(`Q${prevIndex + 1}`, prevIndex));
     setCurrentQuestionText(QUESTIONS[prevIndex]);
     setIsFollowUp(false);
   };
 
+  // 输入守卫：如果答案为空，直接跳过 API 调用推进到下一主线问题 [cite: 13, 35, 138]
   const handleNext = async () => {
+    const trimmed = currentAnswerText.trim();
+    if (!trimmed) {
+      skipToNextBase('已跳过本题，进入下一环节');
+      return;
+    }
     await handleAdvanceStep();
+  };
+
+  const handleSkipFollowUp = () => {
+    skipToNextBase('已跳过本题，进入下一环节');
+  };
+
+  const skipToNextBase = (message) => {
+    const nextIndex = Math.min(currentIndex + 1, QUESTIONS.length - 1);
+    setCurrentIndex(nextIndex);
+    setCurrentQuestionId(normalizeQuestionId(`Q${nextIndex + 1}`, nextIndex));
+    setCurrentQuestionText(QUESTIONS[nextIndex]);
+    setIsFollowUp(false);
+    setStatus(message);
   };
 
   const handleGenerate = async () => {
@@ -162,10 +188,17 @@ function App() {
 
   const handleAdvanceStep = async () => {
     const currentText = currentAnswerText.trim();
+    if (!currentText) {
+      skipToNextBase('已跳过本题，进入下一环节');
+      return;
+    }
+
+    const safeQuestionId = normalizeQuestionId(currentQuestionId);
+
     setAnswers((prev) => ({
       ...prev,
-      [currentQuestionId]: {
-        ...(prev[currentQuestionId] || {}),
+      [safeQuestionId]: {
+        ...(prev[safeQuestionId] || {}),
         edited: currentText,
       },
     }));
@@ -181,11 +214,11 @@ function App() {
         answers: Object.fromEntries(
           Object.entries({
             ...answers,
-            [currentQuestionId]: { ...(answers[currentQuestionId] || {}), edited: currentText },
+            [safeQuestionId]: { ...(answers[safeQuestionId] || {}), edited: currentText },
           }).map(([key, value]) => [key, value.edited || ''])
         ),
         current_question: {
-          id: currentQuestionId,
+          id: safeQuestionId,
           text: currentQuestionText,
         },
         follow_up_history: followUpHistory,
@@ -203,24 +236,25 @@ function App() {
       const nextQuestion = result.next_question || {};
       if (nextQuestion.id && nextQuestion.text) {
         const isDynamicFollowUp = Boolean(result.follow_up);
-        setCurrentQuestionId(nextQuestion.id);
+        const nextId = normalizeQuestionId(nextQuestion.id);
+        setCurrentQuestionId(nextId);
         setCurrentQuestionText(nextQuestion.text);
         setIsFollowUp(isDynamicFollowUp);
         setCurrentIndex((index) =>
-          nextQuestion.id.startsWith('Q') ? Number(nextQuestion.id.replace('Q', '')) - 1 : index
+          nextId.startsWith('Q') ? Number(nextId.replace('Q', '')) - 1 : index
         );
         if (isDynamicFollowUp) {
-          setFollowUpHistory((prev) => [...prev, { id: nextQuestion.id, text: nextQuestion.text }]);
+          setFollowUpHistory((prev) => [...prev, { id: nextId, text: nextQuestion.text }]);
         }
         setStatus(isDynamicFollowUp ? 'AI 追问：请补充细节' : '请继续下一题');
       } else if (result.done) {
         await handleGenerate();
       } else {
-        // 后端未返回下一题，尝试顺序推进
+        // 后端未返回下一题，尝试顺序推进 [cite: 716]
         const nextIndex = Math.min(currentIndex + 1, QUESTIONS.length - 1);
         const fallbackId = `Q${nextIndex + 1}`;
         setCurrentIndex(nextIndex);
-        setCurrentQuestionId(fallbackId);
+        setCurrentQuestionId(normalizeQuestionId(fallbackId, nextIndex));
         setCurrentQuestionText(QUESTIONS[nextIndex]);
         setIsFollowUp(false);
         setStatus('请继续下一题');
@@ -364,6 +398,12 @@ function App() {
                         <button id="next-btn" className="primary-btn" onClick={handleNext} disabled={isLoadingNext}>
                           {isLoadingNext ? 'AI 分析中...' : '提交本题 / 下一步'}
                         </button>
+                        {/* 强化跳过追问按钮 [cite: 19, 36] */}
+                        {isFollowUp && (
+                          <button className="ghost-btn" onClick={handleSkipFollowUp} disabled={isLoadingNext}>
+                            跳过追问，继续主线
+                          </button>
+                        )}
                       </div>
                     </div>
 
