@@ -47,11 +47,16 @@ function App() {
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [followUpHistory, setFollowUpHistory] = useState([]);
 
-  // 核心修复：标准化 ID，防止 QNaN [cite: 35, 50, 641]
+  const getSafeIndex = (index) => {
+    const numeric = Number.isFinite(index) ? index : 0;
+    return Math.min(Math.max(numeric, 0), QUESTIONS.length - 1);
+  };
+
   const normalizeQuestionId = (id, indexFallback = currentIndex) => {
-    if (typeof id === 'string' && id.trim()) return id.trim();
-    const safeIndex = Number.isFinite(indexFallback) ? indexFallback : 0;
-    return `Q${Math.min(QUESTIONS.length, Math.max(1, safeIndex + 1))}`;
+    const trimmed = typeof id === 'string' ? id.trim() : '';
+    if (trimmed && /^Q\d+$/.test(trimmed)) return trimmed;
+    const safeIndex = getSafeIndex(indexFallback);
+    return `Q${safeIndex + 1}`;
   };
 
   const sessionIdRef = useRef(`s_${Math.random().toString(36).slice(2, 11)}`);
@@ -128,15 +133,15 @@ function App() {
   };
 
   const handlePrev = () => {
-    if (currentIndex === 0) return;
-    const prevIndex = Math.max(currentIndex - 1, 0);
+    const safeIndex = getSafeIndex(currentIndex);
+    if (safeIndex === 0) return;
+    const prevIndex = getSafeIndex(safeIndex - 1);
     setCurrentIndex(prevIndex);
     setCurrentQuestionId(normalizeQuestionId(`Q${prevIndex + 1}`, prevIndex));
     setCurrentQuestionText(QUESTIONS[prevIndex]);
     setIsFollowUp(false);
   };
 
-  // 输入守卫：如果答案为空，直接跳过 API 调用推进到下一主线问题 [cite: 13, 35, 138]
   const handleNext = async () => {
     const trimmed = currentAnswerText.trim();
     if (!trimmed) {
@@ -151,7 +156,8 @@ function App() {
   };
 
   const skipToNextBase = (message) => {
-    const nextIndex = Math.min(currentIndex + 1, QUESTIONS.length - 1);
+    const safeIndex = getSafeIndex(currentIndex);
+    const nextIndex = getSafeIndex(safeIndex + 1);
     setCurrentIndex(nextIndex);
     setCurrentQuestionId(normalizeQuestionId(`Q${nextIndex + 1}`, nextIndex));
     setCurrentQuestionText(QUESTIONS[nextIndex]);
@@ -193,7 +199,7 @@ function App() {
       return;
     }
 
-    const safeQuestionId = normalizeQuestionId(currentQuestionId);
+    const safeQuestionId = normalizeQuestionId(currentQuestionId, currentIndex);
 
     setAnswers((prev) => ({
       ...prev,
@@ -236,12 +242,12 @@ function App() {
       const nextQuestion = result.next_question || {};
       if (nextQuestion.id && nextQuestion.text) {
         const isDynamicFollowUp = Boolean(result.follow_up);
-        const nextId = normalizeQuestionId(nextQuestion.id);
+        const nextId = normalizeQuestionId(nextQuestion.id, currentIndex);
         setCurrentQuestionId(nextId);
         setCurrentQuestionText(nextQuestion.text);
         setIsFollowUp(isDynamicFollowUp);
         setCurrentIndex((index) =>
-          nextId.startsWith('Q') ? Number(nextId.replace('Q', '')) - 1 : index
+          nextId.startsWith('Q') ? getSafeIndex(Number(nextId.replace('Q', '')) - 1) : getSafeIndex(index)
         );
         if (isDynamicFollowUp) {
           setFollowUpHistory((prev) => [...prev, { id: nextId, text: nextQuestion.text }]);
@@ -250,8 +256,9 @@ function App() {
       } else if (result.done) {
         await handleGenerate();
       } else {
-        // 后端未返回下一题，尝试顺序推进 [cite: 716]
-        const nextIndex = Math.min(currentIndex + 1, QUESTIONS.length - 1);
+        // 后端未返回下一题，尝试顺序推进
+        const safeIndex = getSafeIndex(currentIndex);
+        const nextIndex = getSafeIndex(safeIndex + 1);
         const fallbackId = `Q${nextIndex + 1}`;
         setCurrentIndex(nextIndex);
         setCurrentQuestionId(normalizeQuestionId(fallbackId, nextIndex));
@@ -398,7 +405,6 @@ function App() {
                         <button id="next-btn" className="primary-btn" onClick={handleNext} disabled={isLoadingNext}>
                           {isLoadingNext ? 'AI 分析中...' : '提交本题 / 下一步'}
                         </button>
-                        {/* 强化跳过追问按钮 [cite: 19, 36] */}
                         {isFollowUp && (
                           <button className="ghost-btn" onClick={handleSkipFollowUp} disabled={isLoadingNext}>
                             跳过追问，继续主线

@@ -183,7 +183,6 @@ button:disabled {
     gap: 1.5rem;
 }
 
-/* 合并后的 action-btns，包含对齐和换行支持 */
 .action-btns {
     display: flex;
     gap: 1rem;
@@ -222,7 +221,6 @@ button:disabled {
     min-height: 1.5rem;
 }
 
-/* 新增的 ghost-btn，用于“跳过追问” */
 .ghost-btn {
     padding: 0.35rem 0.75rem;
     background: transparent;
