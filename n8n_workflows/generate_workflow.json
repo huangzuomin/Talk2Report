@@ -1,0 +1,618 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8c5ac7e0-60be-4122-bc3d-4e82eab3396c",
+      "name": "Webhook - Generate Report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        144
+      ],
+      "webhookId": "talk2report-generate-v2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "val-conv",
+              "name": "conversation_history",
+              "value": "={{ $json.body.conversation_history }}",
+              "type": "array"
+            },
+            {
+              "id": "val-prefs",
+              "name": "preferences",
+              "value": "={{ $json.body.preferences }}",
+              "type": "object"
+            },
+            {
+              "id": "val-extracted",
+              "name": "extracted_data",
+              "value": "={{ $json.body.extracted_data }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b877bee3-8bce-425b-9313-11984c958037",
+      "name": "Extract Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "content": "=## Agent B: Archivist\n\n### 任务\n从对话历史中提取结构化数据，映射到 YearEndSummary schema。\n\n### Schema 字段\n- basic_info: 基本信息\n- highlights: 核心成果\n- challenges: 挑战应对\n- growth: 个人成长\n- team_contribution: 团队贡献\n- future_goals: 未来规划\n\n### 重要\n- 只提取**明确提及**的信息\n- 不要编造或推断\n- 数字和奖项必须原样引用\n- 如果信息缺失，返回 null",
+        "height": 590,
+        "width": 350,
+        "color": 5
+      },
+      "id": "274cc971-ecda-47a3-bfc1-4e0daed9a214",
+      "name": "Agent B Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.0,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一个专业的归档员 Agent B。你的任务是从对话历史中提取结构化数据，并严格按照 JSON 格式输出。\\n\\n需要提取的字段 Schema 如下：\\n- basic_info: 基本信息\\n- highlights: 核心成果\\n- challenges: 挑战应对\\n- growth: 个人成长\\n- team_contribution: 团队贡献\\n- future_goals: 未来规划\\n\\n重要规则：\\n1. 只提取明确提及的信息，不要编造。\\n2. 数字和奖项原样引用。\\n3. 信息缺失字段返回 null。\\n4. 直接返回 JSON 对象，不要包含 markdown 代码块标记。\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.conversation_history }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "43687c33-f7b3-47d1-811d-1fe3440d1a2f",
+      "name": "Agent B - Extract Factsheet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        144
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 解析 Agent B 的响应\nconst response = $input.item.json;\nconst content = response.choices?.[0]?.message?.content || '';\n\n// 提取 JSON\nlet factsheet;\ntry {\n  const jsonMatch = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    factsheet = JSON.parse(jsonMatch[1]);\n  } else {\n    factsheet = JSON.parse(content);\n  }\n} catch (e) {\n  throw new Error('Failed to parse Agent B response: ' + e.message);\n}\n\n// 获取用户偏好\nconst preferences = $('Extract Input').item.json.preferences;\n\nreturn {\n  factsheet: factsheet,\n  preferences: preferences,\n  iteration: 1,\n  rewrite_context: null\n};"
+      },
+      "id": "d189c605-6123-4ca4-b43f-e69cf72608ce",
+      "name": "Prepare for Agent C",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "content": "=## Agent C: Writers (并行)\n\n### 任务\n基于结构化数据和用户偏好，并行生成3个版本的报告。\n\n### 3个版本\n1. **Brief (电梯汇报)**: 200字以内，精炼有力\n2. **Formal (正式述职)**: 800-1500字，金字塔结构\n3. **Social (朋友圈文案)**: 感性表达，emoji点缀\n\n### 用户偏好\n- 受众: {{ $json.preferences.audience }}\n- 文风: {{ $json.preferences.tone }}\n- 字数: {{ $json.preferences.length_main_chars }}\n\n### 重写上下文\n{{ $json.iteration > 1 ? '包含 Critic 的反馈意见' : '首次生成' }}",
+        "height": 688,
+        "width": 400,
+        "color": 6
+      },
+      "id": "e7a6ea14-4f7e-46ef-aa5c-566c221b8477",
+      "name": "Agent C Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -672
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 3,
+        "options": {}
+      },
+      "id": "212f0972-ad78-4ef7-adb6-ec10fafd9740",
+      "name": "Create Writer Tasks",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "writer-type",
+              "name": "writer_type",
+              "value": "=brief",
+              "type": "string"
+            },
+            {
+              "id": "instruction",
+              "name": "instruction",
+              "value": "=生成200字电梯汇报版，要求精炼有力，突出核心成果",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f4000d70-831a-42e9-8d00-ca9410bf88ad",
+      "name": "Writer 1: Brief",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "writer-type",
+              "name": "writer_type",
+              "value": "=formal",
+              "type": "string"
+            },
+            {
+              "id": "instruction",
+              "name": "instruction",
+              "value": "=生成正式年度述职版({{ $json.length_main_chars || 1200 }}字)，使用金字塔结构，包含开场、核心成果、挑战应对、个人成长、团队贡献、未来规划、结尾",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c9c0dc39-4157-475d-93a7-29276d9aca7b",
+      "name": "Writer 2: Formal",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "writer-type",
+              "name": "writer_type",
+              "value": "=social",
+              "type": "string"
+            },
+            {
+              "id": "instruction",
+              "name": "instruction",
+              "value": "=生成朋友圈文案版，感性表达，使用emoji点缀，300字以内",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a85f9705-26ed-473c-9c1a-55f2593dd6b0",
+      "name": "Writer 3: Social",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.7,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"{{ $json.system_instruction }}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"这里是核心数据，请根据系统指令生成报告：\\n\\n【用户偏好】\\n{{ JSON.stringify($json.preferences) }}\\n\\n【核心数据 (Factsheet)】\\n{{ JSON.stringify($json.factsheet) }}\\n\\n【上下文】\\n{{ $json.iteration > 1 ? '这是修改稿，请结合之前的 Critic 意见进行优化。' : '这是初稿。' }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "bb0446f3-d4fd-4fbc-ad08-f672c6a2804a",
+      "name": "Call Writer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1072,
+        144
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "drafts",
+        "options": {}
+      },
+      "id": "ef459c8b-db7b-48ac-a811-78f65129e89a",
+      "name": "Merge All Drafts",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "content": "=## Agent D: Critic\n\n### 任务\n验证报告的逻辑一致性、因果关系、证据支撑。\n\n### 验证标准\n1. 逻辑一致性 - 前后不矛盾\n2. 因果关系 - 成果有明确的行动支撑\n3. 证据支撑 - 数据和事实可信\n4. 完整性 - 涵盖所有重要方面\n\n### 评分\n- 90-100: 优秀，可以直接使用\n- 80-89: 良好，微调后可用\n- < 80: 需要重写\n\n### 输出格式\n```json\n{\n  \"passed\": true,\n  \"score\": 87,\n  \"verdict\": \"报告质量评价\",\n  \"issues\": [],\n  \"rewrite_needed\": false\n}\n```",
+        "height": 770,
+        "width": 400,
+        "color": 7
+      },
+      "id": "e3e4d0a3-5fc9-4e69-9929-4a52651b3d6c",
+      "name": "Agent D Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -656
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.0,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一个严格的报告评审专家 Agent D (Critic)。\\n\\n请根据以下4个维度验证报告质量：\\n1. 逻辑一致性 (前后是否矛盾)\\n2. 因果关系 (成果是否有行动支撑)\\n3. 证据支撑 (数据事实是否可信)\\n4. 完整性 (是否涵盖所有重要方面)\\n\\n评分规则：\\n- < 80分：不合格，必须重写 (rewrite_needed = true)\\n- 80-89分：良好\\n- 90-100分：优秀\\n\\n请严格按照以下 JSON 格式输出（不要输出 markdown）：\\n{\\n  \\\"passed\\\": boolean,\\n  \\\"score\\\": number,\\n  \\\"verdict\\\": \\\"简短评价\\\",\\n  \\\"issues\\\": [\\\"问题点1\\\", \\\"问题点2\\\"],\\n  \\\"rewrite_needed\\\": boolean\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"请评审以下生成的报告草稿：\\n\\n{{ JSON.stringify($json) }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "7faa99c8-8a2a-41a5-b42b-7c6f13b95c86",
+      "name": "Agent D - Validate Quality",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        144
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-score",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": 80,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c3a0abaf-02e1-4970-8fd3-1edab592d69f",
+      "name": "Check Quality Score",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"iterations\": $('Prepare for Agent C').item.json.iteration,\n  \"factsheet\": $('Prepare for Agent C').item.json.factsheet,\n  \"versions\": $('Merge All Drafts').item.json.drafts.map(d => ({\n    type: d.writer_type,\n    content: d.choices?.[0]?.message?.content || ''\n  })),\n  \"quality\": {\n    \"passed\": $json.passed,\n    \"score\": $json.score,\n    \"verdict\": $json.verdict,\n    \"thinking\": $json.thinking || ''\n  },\n  \"timestamp\": new Date().toISOString()\n} }}",
+        "options": {}
+      },
+      "id": "6adb25f0-66d6-4a0e-b505-bd4202c47a78",
+      "name": "Return Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2080,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 检查迭代次数\nconst currentIteration = $('Prepare for Agent C').item.json.iteration;\nconst maxIterations = 3;\n\nif (currentIteration >= maxIterations) {\n  // 达到最大迭代次数，强制返回当前结果\n  return {\n    force_return: true,\n    message: `已达到最大迭代次数(${maxIterations})，返回当前结果`\n  };\n}\n\n// 准备重写上下文\nconst criticResponse = $input.item.json;\nconst rewriteContext = {\n  verdict: criticResponse.verdict,\n  issues: criticResponse.issues || [],\n  suggestions: criticResponse.issues?.map(i => i.suggestion).join('\\n') || '',\n  score: criticResponse.score\n};\n\nreturn {\n  iteration: currentIteration + 1,\n  rewrite_context: JSON.stringify(rewriteContext),\n  factsheet: $('Prepare for Agent C').item.json.factsheet,\n  preferences: $('Prepare for Agent C').item.json.preferences\n};"
+      },
+      "id": "be247e55-368e-4366-9497-2a602848e161",
+      "name": "Prepare Rewrite",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-force",
+              "leftValue": "={{ $json.force_return }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d97a5d16-0bb5-47be-a0e7-a7b9aef75a3e",
+      "name": "Check Max Iterations",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"iterations\": $('Prepare for Agent C').item.json.iteration,\n  \"factsheet\": $('Prepare for Agent C').item.json.factsheet,\n  \"versions\": $('Merge All Drafts').item.json.drafts.map(d => ({\n    type: d.writer_type,\n    content: d.choices?.[0]?.message?.content || ''\n  })),\n  \"quality\": {\n    \"passed\": false,\n    \"score\": $('Check Quality Score').item.json.score,\n    \"verdict\": $('Check Quality Score').item.json.verdict + ' (已达到最大迭代次数)',\n    \"message\": $json.message\n  },\n  \"warning\": \"Report quality did not meet threshold after maximum iterations\",\n  \"timestamp\": new Date().toISOString()\n} }}",
+        "options": {}
+      },
+      "id": "ee0535ba-ca8c-4203-9db1-a2eb9e6451e1",
+      "name": "Return with Warning",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2480,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 生成工作流说明\n\n### 触发方式\nPOST /webhook/generate\n\n### 请求体\n```json\n{\n  \"conversation_history\": [...],\n  \"preferences\": {\n    \"role\": \"前端工程师\",\n    \"audience\": \"leader\",\n    \"tone\": \"formal\",\n    \"length_main_chars\": 1200\n  },\n  \"extracted_data\": {}  // 可选，跳过Agent B\n}\n```\n\n### 响应体\n```json\n{\n  \"success\": true,\n  \"iterations\": 1,\n  \"factsheet\": {...},\n  \"versions\": [\n    {\"type\": \"brief\", \"content\": \"...\"},\n    {\"type\": \"formal\", \"content\": \"...\"},\n    {\"type\": \"social\", \"content\": \"...\"}\n  ],\n  \"quality\": {\n    \"passed\": true,\n    \"score\": 87,\n    \"verdict\": \"...\"\n  }\n}\n```\n\n### 质量闭环\n- 如果 score < 80，自动重写\n- 最多重写3次\n- 每次重写都包含 Critic 的反馈",
+        "height": 1094,
+        "width": 400,
+        "color": 2
+      },
+      "id": "79cf5171-6ceb-4810-89b4-c51eeb3c34ad",
+      "name": "Workflow Documentation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        -176
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Generate Report": {
+      "main": [
+        [
+          {
+            "node": "Extract Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Input": {
+      "main": [
+        [
+          {
+            "node": "Agent B - Extract Factsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent B - Extract Factsheet": {
+      "main": [
+        [
+          {
+            "node": "Prepare for Agent C",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for Agent C": {
+      "main": [
+        [
+          {
+            "node": "Create Writer Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Writer Tasks": {
+      "main": [
+        [
+          {
+            "node": "Writer 1: Brief",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Writer 2: Formal",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Writer 3: Social",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer 1: Brief": {
+      "main": [
+        [
+          {
+            "node": "Call Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer 2: Formal": {
+      "main": [
+        [
+          {
+            "node": "Call Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer 3: Social": {
+      "main": [
+        [
+          {
+            "node": "Call Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Writer": {
+      "main": [
+        [
+          {
+            "node": "Merge All Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Drafts": {
+      "main": [
+        [
+          {
+            "node": "Agent D - Validate Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent D - Validate Quality": {
+      "main": [
+        [
+          {
+            "node": "Check Quality Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Quality Score": {
+      "main": [
+        [
+          {
+            "node": "Return Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Rewrite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Rewrite": {
+      "main": [
+        [
+          {
+            "node": "Check Max Iterations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Max Iterations": {
+      "main": [
+        [
+          {
+            "node": "Return with Warning",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare for Agent C",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "9087f00fd0adab70eff9b6563653ea164d3596f3e5321096b7f8aa701f5f7614"
+  }
+}

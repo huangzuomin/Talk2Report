@@ -1,0 +1,210 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "YearEndSummary",
+    "description": "年终总结结构化数据 Schema",
+    "type": "object",
+    "properties": {
+        "basic_info": {
+            "type": "object",
+            "properties": {
+                "year": {
+                    "type": "integer",
+                    "description": "年份"
+                },
+                "department": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "部门"
+                },
+                "role": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "岗位"
+                }
+            },
+            "required": [
+                "year"
+            ]
+        },
+        "highlights": {
+            "type": "array",
+            "description": "核心成果",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "成果标题"
+                    },
+                    "actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "具体行动"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "具体结果"
+                    },
+                    "evidence": {
+                        "type": "object",
+                        "properties": {
+                            "metrics": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "数据指标（必须原文引用）"
+                            },
+                            "feedback": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "他人反馈（必须原文引用）"
+                            },
+                            "awards": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "奖项荣誉（必须原文引用）"
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "title",
+                    "actions",
+                    "results",
+                    "evidence"
+                ]
+            }
+        },
+        "challenges": {
+            "type": "array",
+            "description": "挑战与应对",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "situation": {
+                        "type": "string",
+                        "description": "挑战情境"
+                    },
+                    "actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "应对行动"
+                    },
+                    "outcome": {
+                        "type": "string",
+                        "description": "结果"
+                    }
+                },
+                "required": [
+                    "situation",
+                    "actions",
+                    "outcome"
+                ]
+            }
+        },
+        "growth": {
+            "type": "object",
+            "description": "个人成长",
+            "properties": {
+                "skills": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "新技能"
+                },
+                "reflections": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "反思"
+                },
+                "feedback_received": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "收到的反馈"
+                }
+            }
+        },
+        "contributions": {
+            "type": "object",
+            "description": "团队贡献",
+            "properties": {
+                "team_culture": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "团队文化贡献"
+                },
+                "mentoring": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "指导他人"
+                }
+            }
+        },
+        "future": {
+            "type": "object",
+            "description": "未来规划",
+            "properties": {
+                "goals": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "目标"
+                },
+                "support_needed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "所需支持"
+                },
+                "career_direction": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "职业方向"
+                }
+            }
+        },
+        "keywords": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "三个关键词"
+        }
+    },
+    "required": [
+        "basic_info",
+        "highlights",
+        "keywords"
+    ]
+}

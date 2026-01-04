@@ -1,0 +1,103 @@
+{
+  "body": {
+    "session_id": "test-session-2025-12-28-001",
+    "answers": {
+      "personal_info": {
+        "name": "张三",
+        "department": "研发部",
+        "position": "高级软件工程师",
+        "years_in_company": 3,
+        "work_years": 5
+      },
+      "achievements": {
+        "projects": [
+          {
+            "name": "客户关系管理系统重构",
+            "role": "技术负责人",
+            "duration": "2024年3月 - 2024年8月",
+            "team_size": 5,
+            "description": "将旧的PHP系统重构为Node.js微服务架构，提升系统性能50%",
+            "results": "系统响应时间从800ms降至200ms，用户满意度提升40%",
+            "technologies": ["Node.js", "MongoDB", "Redis", "Docker"]
+          },
+          {
+            "name": "数据分析平台开发",
+            "role": "核心开发者",
+            "duration": "2024年9月 - 2024年12月",
+            "team_size": 3,
+            "description": "为业务部门开发实时数据分析平台，支持自助式报表生成",
+            "results": "帮助业务部门减少30%的数据分析工作量，报表生成时间从2天缩短到2小时",
+            "technologies": ["Vue.js", "Python", "PostgreSQL", "ECharts"]
+          }
+        ],
+        "bug_fixes": "全年修复系统关键Bug 15个，其中紧急Bug 5个，普通Bug 10个，系统稳定性提升25%",
+        "performance_optimization": "优化数据库查询12处，平均性能提升60%，减少服务器成本约8万元/年",
+        "innovations": "提出并实施了CI/CD自动化部署流程，将部署时间从1小时缩短到10分钟，减少人为错误80%"
+      },
+      "skills_growth": {
+        "new_skills": [
+          "学习了Kubernetes容器编排技术",
+          "掌握了Go语言基础，完成2个微服务模块开发",
+          "深入研究了系统性能优化方法论"
+        ],
+        "training": "参加了QCon技术大会、阿里云架构师培训，共计培训时长40小时",
+        "certifications": "获得阿里云ACP认证、CKA认证"
+      },
+      "team_collaboration": {
+        "mentorship": "指导2名新工程师，帮助他们在3个月内独立承担项目开发",
+        "knowledge_sharing": "组织内部技术分享会4次，主题包括微服务架构、性能优化、DevOps实践",
+        "cross_team": "与产品、测试团队密切配合，推动项目按时交付率100%"
+      },
+      "challenges_overcome": {
+        "challenge_1": {
+          "name": "系统迁移期间的数据一致性挑战",
+          "solution": "设计了双写方案，确保新旧系统数据同步，最终实现平滑迁移"
+        },
+        "challenge_2": {
+          "name": "高并发场景下的性能瓶颈",
+          "solution": "引入Redis缓存层，优化数据库索引，将QPS从500提升到2000"
+        }
+      },
+      "areas_for_improvement": {
+        "weakness": "对业务理解还需加深，有时过于关注技术实现而忽略业务价值",
+        "improvement_plan": "2025年计划每周参与产品需求评审，加强业务思维培养"
+      },
+      "goals_and_plans": {
+        "q1_goals": [
+          "完成数据分析平台2.0版本开发",
+          "学习大数据处理技术"
+        ],
+        "annual_goals": [
+          "晋升为技术专家",
+          "在技术社区发表至少2篇技术文章"
+        ]
+      },
+      "team_feedback": [
+        "张三技术能力强，但沟通可以更主动一些",
+        "代码质量高，review很认真，团队受益良多",
+        "在紧急情况下响应迅速，值得信赖"
+      ],
+      "numbers_and_metrics": {
+        "projects_completed": 2,
+        "bugs_fixed": 15,
+        "tech_shares": 4,
+        "mentees": 2,
+        "performance_improvement": "50-60%",
+        "cost_savings": "8万元/年",
+        "deployment_time_reduction": "从1小时到10分钟"
+      },
+      "awards_and_recognition": {
+        "awards": ["Q3季度最佳技术贡献奖", "年度优秀员工提名"],
+        "thanks": [
+          "收到业务部门感谢信3封",
+          "获得项目经理书面表扬2次"
+        ]
+      }
+    },
+    "params": {
+      "audience": "manager",
+      "tone": "professional",
+      "length": "medium"
+    }
+  }
+}

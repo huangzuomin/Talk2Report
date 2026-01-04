@@ -1,0 +1,875 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "230ce243-8004-47fc-b9cc-40824e273ad7",
+      "name": "Webhook - Generate",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        720
+      ],
+      "webhookId": "talk2report-generate",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "iCbTDgNtVk51bd58",
+          "name": "NeicanSTT2025Secret"
+        }
+      },
+      "notes": "接收生成请求的Webhook触发器"
+    },
+    {
+      "parameters": {
+        "content": "## Talk2Report 生成工作流 v2.1\n\n### 功能流程\n1. Webhook 接收请求\n2. 输入验证\n3. AI 信息抽取\n4. AI 报告生成\n5. 返回结果\n\n### n8n 2.0+ 兼容性\n- 使用 AI Agent (root node)\n- OpenAI Chat Model (sub-node)\n- 符合最新 LangChain 规范",
+        "height": 424,
+        "width": 344,
+        "color": 6
+      },
+      "id": "cb19c698-eeae-4379-b30e-d124aa2f8bd2",
+      "name": "工作流概述",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1872,
+        448
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "validation_session_id",
+              "name": "has_session_id",
+              "value": "={{ !!$json.body?.session_id }}",
+              "type": "boolean"
+            },
+            {
+              "id": "validation_answers",
+              "name": "has_answers",
+              "value": "={{ !!$json.body?.answers }}",
+              "type": "boolean"
+            },
+            {
+              "id": "validation_params",
+              "name": "has_params",
+              "value": "={{ !!$json.body?.params }}",
+              "type": "boolean"
+            },
+            {
+              "id": "validation_all",
+              "name": "is_valid",
+              "value": "={{ !!$json.body?.session_id && !!$json.body?.answers && !!$json.body?.params }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "803ccb98-5848-4ea3-8596-b4097f9a8f4f",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2448,
+        720
+      ],
+      "notes": "验证输入数据完整性"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check_valid",
+              "leftValue": "={{ $json.is_valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2af8e7e5-0140-4bd7-8710-9c7e1563a122",
+      "name": "Check Validation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        2672,
+        720
+      ],
+      "notes": "验证通过则继续，否则返回错误"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"error\": \"Validation failed\",\n  \"message\": \"Missing required fields: session_id, answers, or params\",\n  \"received\": $json.body\n} }}",
+        "options": {}
+      },
+      "id": "0eaeb479-11c4-4b0f-99c3-5b2ae541150d",
+      "name": "Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2896,
+        816
+      ],
+      "notes": "返回验证错误响应"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "session_id_var",
+              "name": "session_id",
+              "value": "={{ $('Webhook - Generate').item.json.body.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "answers_var",
+              "name": "answers",
+              "value": "={{ $('Webhook - Generate').item.json.body.answers }}",
+              "type": "object"
+            },
+            {
+              "id": "params_var",
+              "name": "params",
+              "value": "={{ $('Webhook - Generate').item.json.body.params }}",
+              "type": "object"
+            },
+            {
+              "id": "timestamp_var",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dbdbb770-e755-44dd-bb4e-f4d4ef31bcd3",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2896,
+        624
+      ],
+      "notes": "设置工作流变量和时间戳"
+    },
+    {
+      "parameters": {
+        "content": "## AI 信息抽取器 (n8n 2.0+)\n\n**节点结构：**\n- AI Agent (root node)\n  - OpenAI Chat Model (sub-node)\n\n**功能：**\n从访谈回答中抽取结构化 JSON 信息\n\n**输出：**YearEndSummary schema",
+        "height": 336,
+        "width": 380,
+        "color": 3
+      },
+      "id": "675cb19c-c3e6-4337-8af6-7982ab593ef2",
+      "name": "信息抽取说明",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3088,
+        224
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=访谈回答：\n{{ JSON.stringify($json.answers) }}\n\n请开始抽取结构化信息，只输出符合 YearEndSummary schema 的 JSON。",
+        "options": {
+          "systemMessage": "=你是一个专业的信息抽取专家。你的任务是将用户的访谈回答映射到结构化 JSON，严格遵守以下规则。\n\n## 核心规则\n1. **只提取明确提到的信息** - 不得推测或编造\n2. **数字/日期/人名/奖项必须原文引用** - 一字不差\n3. **缺失信息填 null 或空数组** - 不要用【待补充】\n4. **不得脑补细节** - 宁可留空，不要编造\n\n## 输出格式\n你必须严格按照以下 JSON Schema 输出，只输出 JSON，不要任何解释。"
+        }
+      },
+      "id": "d3e86cab-f39a-4a73-b406-07a7422f328a",
+      "name": "Extractor Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        3120,
+        624
+      ],
+      "notes": "AI 信息抽取 - 使用 n8n 2.0+ AI Agent 节点"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Qwen/Qwen2.5-7B-Instruct"
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.3
+        }
+      },
+      "id": "9533272b-4b2b-4d65-a11c-fd1df4c0972f",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [
+        3472,
+        624
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "ORpzLcGwn35FqSPV",
+          "name": "硅基流动"
+        }
+      },
+      "notes": "Extractor 的 Chat Model (连接到 Agent 的 chatModel 输入)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has_output_error",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6d60bfe1-f142-4f80-83a5-f12e6960cc3b",
+      "name": "Check Extractor Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        3824,
+        624
+      ],
+      "notes": "检查抽取器是否出错"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "summary_json_var",
+              "name": "summary_json",
+              "value": "={{ JSON.parse($json.output) }}",
+              "type": "object",
+              "typeConfig": {
+                "loadAll": true
+              }
+            },
+            {
+              "id": "session_id_keep",
+              "name": "session_id",
+              "value": "={{ $('Set Variables').item.json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "params_keep",
+              "name": "params",
+              "value": "={{ $('Set Variables').item.json.params }}",
+              "type": "object"
+            },
+            {
+              "id": "timestamp_keep",
+              "name": "timestamp",
+              "value": "={{ $('Set Variables').item.json.timestamp }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4e96614d-7a02-49af-a6b3-43ef65600ece",
+      "name": "Prepare Writer Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4048,
+        496
+      ],
+      "notes": "准备Writer输入 - 解析抽取的JSON"
+    },
+    {
+      "parameters": {
+        "content": "## AI 报告生成器 (n8n 2.0+)\n\n**节点结构：**\n- AI Agent (root node)\n  - OpenAI Chat Model (sub-node)\n\n**生成版本：**\n1. draft_short (200字精简版)\n2. draft_main (800-1500字正式稿)\n3. outline (结构化大纲)\n4. ppt_outline (PPT提纲)",
+        "height": 340,
+        "width": 380,
+        "color": 5
+      },
+      "id": "09f46a18-68c7-426d-b772-05cdd2bed3fc",
+      "name": "报告生成说明",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3952,
+        144
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=summary_json: {{ JSON.stringify($json.summary_json) }}\n\n参数：\n- 受众：{{ $json.params.audience }}\n- 风格：{{ $json.params.tone }}\n- 字数：{{ $json.params.length }}\n\n请开始生成四版本文本，输出 JSON。",
+        "options": {
+          "systemMessage": "=你是一个专业的职场写作助手。基于结构化数据生成年终总结，严格遵守以下规则。\n\n## 核心规则\n1. **不得添加 summary_json 中不存在的事实** - 特别是数字、奖项、具体案例\n2. **缺失信息不要编造** - 如果 summary_json 中某字段为 null 或空，跳过该部分\n3. **压制套话** - 禁用：积极、认真、努力、主动、热情、显著提升、大幅增长、深刻认识到\n4. **用事实说话** - 优先使用具体数字、具体案例、他人反馈\n\n## 输出格式\n你必须严格按照以下 JSON 格式输出，只输出 JSON，不要任何解释：\n{\n  \"draft_short\": \"200字精简版\",\n  \"draft_main\": \"800-1500字正式稿\",\n  \"outline\": \"结构化大纲（Markdown）\",\n  \"ppt_outline\": \"PPT 提纲（10页以内）\"\n}\n\n## 反套话示例\n❌ 我积极主动地推进了项目\n✅ 我每周组织 2 次跨部门会议，协调 5 个团队的进度\n\n❌ 取得了显著成效\n✅ 将交付周期从 4 周缩短至 2 周，节省成本约 30 万元"
+        }
+      },
+      "id": "a97b5a8a-073c-46ee-8c22-0f732ec0eb30",
+      "name": "Writer Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        4272,
+        496
+      ],
+      "notes": "AI 报告生成 - 使用 n8n 2.0+ AI Agent 节点"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "Qwen/Qwen2.5-7B-Instruct"
+        },
+        "messages": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {
+          "maxTokens": 3000,
+          "temperature": 0.7
+        }
+      },
+      "id": "9d5fa613-dac2-413c-87c1-b19fd5e70f7e",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.5,
+      "position": [
+        4624,
+        496
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "ORpzLcGwn35FqSPV",
+          "name": "硅基流动"
+        }
+      },
+      "notes": "Writer 的 Chat Model (连接到 Agent 的 chatModel 输入)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has_writer_error",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8a9508b2-1423-4188-aab0-7501ff094ad2",
+      "name": "Check Writer Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        4976,
+        496
+      ],
+      "notes": "检查Writer是否出错"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "final_session_id",
+              "name": "session_id",
+              "value": "={{ $('Prepare Writer Input').item.json.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "final_summary_json",
+              "name": "summary_json",
+              "value": "={{ $('Prepare Writer Input').item.json.summary_json }}",
+              "type": "object"
+            },
+            {
+              "id": "final_outputs",
+              "name": "outputs",
+              "value": "={{ JSON.parse($json.output) }}",
+              "type": "object",
+              "typeConfig": {
+                "loadAll": true
+              }
+            },
+            {
+              "id": "final_timestamp",
+              "name": "timestamp",
+              "value": "={{ $('Prepare Writer Input').item.json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "processing_time",
+              "name": "processing_time_ms",
+              "value": "={{ $now.toMillis() - new Date($('Prepare Writer Input').item.json.timestamp).getTime() }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4fe28396-c828-4a2f-b387-3232593aad80",
+      "name": "Prepare Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5200,
+        400
+      ],
+      "notes": "准备最终响应 - 包含处理时间"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"session_id\": $json.session_id,\n  \"data\": {\n    \"summary\": $json.summary_json,\n    \"outputs\": $json.outputs\n  },\n  \"metadata\": {\n    \"timestamp\": $json.timestamp,\n    \"processing_time_ms\": $json.processing_time_ms,\n    \"version\": \"2.1-n8n2.0\"\n  }\n} }}",
+        "options": {}
+      },
+      "id": "b6e47d1e-acad-4c99-8ef8-15a0ad026b88",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5424,
+        400
+      ],
+      "notes": "返回成功响应"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "extractor_error",
+              "name": "error",
+              "value": "Extractor 输出格式错误",
+              "type": "string"
+            },
+            {
+              "id": "extractor_error_details",
+              "name": "details",
+              "value": "={{ $json.error || 'No output generated' }}",
+              "type": "string"
+            },
+            {
+              "id": "extractor_session_id",
+              "name": "session_id",
+              "value": "={{ $('Set Variables').item.json.session_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d6e09762-0d22-4a18-b86d-09def0a01235",
+      "name": "Extractor Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5200,
+        816
+      ],
+      "notes": "抽取器错误处理"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "writer_error",
+              "name": "error",
+              "value": "Writer 输出格式错误",
+              "type": "string"
+            },
+            {
+              "id": "writer_error_details",
+              "name": "details",
+              "value": "={{ $json.error || 'No output generated' }}",
+              "type": "string"
+            },
+            {
+              "id": "writer_session_id",
+              "name": "session_id",
+              "value": "={{ $('Prepare Writer Input').item.json.session_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "75d7bd56-e903-4a42-93e3-67b2a7e96dc2",
+      "name": "Writer Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5200,
+        592
+      ],
+      "notes": "Writer错误处理"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"error\": $json.error,\n  \"details\": $json.details,\n  \"session_id\": $json.session_id\n} }}",
+        "options": {}
+      },
+      "id": "2b5b9dcf-e4a0-41c4-ac44-a46b8e0d145a",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5424,
+        720
+      ],
+      "notes": "返回错误响应"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        3200,
+        848
+      ],
+      "id": "da39fd45-62f4-46a2-a9cc-742aa5edc07b",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        4352,
+        720
+      ],
+      "id": "53f744d1-0fe4-4cbc-9d4c-2e09fb16048a",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Generate": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Check Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Validation": {
+      "main": [
+        [
+          {
+            "node": "Set Variables",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "Extractor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extractor Agent": {
+      "main": [
+        [
+          {
+            "node": "Check Extractor Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Extractor Error": {
+      "main": [
+        [
+          {
+            "node": "Extractor Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Writer Input": {
+      "main": [
+        [
+          {
+            "node": "Writer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Agent": {
+      "main": [
+        [
+          {
+            "node": "Check Writer Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Writer Error": {
+      "main": [
+        [
+          {
+            "node": "Writer Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extractor Error": {
+      "main": [
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Error": {
+      "main": [
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extractor Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Writer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook - Generate": [
+      {
+        "headers": {
+          "host": "n8n.neican.ai",
+          "user-agent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; zh-CN) WindowsPowerShell/5.1.26100.7462",
+          "content-length": "2423",
+          "accept-encoding": "gzip, br",
+          "authorization": "Bearer NeicanSTT2025Secret",
+          "cdn-loop": "cloudflare; loops=1",
+          "cf-connecting-ip": "74.121.149.136",
+          "cf-ipcountry": "US",
+          "cf-ray": "9b59f7f9ed347a38-EWR",
+          "cf-visitor": "{\"scheme\":\"https\"}",
+          "cf-warp-tag-id": "c9a9e6b6-95b7-4963-9924-755eda39bdc9",
+          "connection": "keep-alive",
+          "content-type": "application/json; charset=utf-8",
+          "x-forwarded-for": "74.121.149.136",
+          "x-forwarded-proto": "https"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "session_id": "test-session-2025-12-29-001",
+          "answers": {
+            "personal_info": {
+              "name": "Zhang San",
+              "department": "R&D Department",
+              "position": "Senior Software Engineer",
+              "years_in_company": 3,
+              "work_years": 5
+            },
+            "achievements": {
+              "projects": [
+                {
+                  "name": "CRM System Refactoring",
+                  "role": "Tech Lead",
+                  "duration": "March 2024 - August 2024",
+                  "team_size": 5,
+                  "description": "Refactored legacy PHP system to Node.js microservices, improved performance by 50%",
+                  "results": "Response time reduced from 800ms to 200ms, user satisfaction increased by 40%",
+                  "technologies": [
+                    "Node.js",
+                    "MongoDB",
+                    "Redis",
+                    "Docker"
+                  ]
+                }
+              ],
+              "bug_fixes": "Fixed 15 critical bugs throughout the year, system stability improved by 25%",
+              "performance_optimization": "Optimized 12 database queries, average performance improvement of 60%, saved approximately 80,000 RMB/year in server costs",
+              "innovations": "Proposed and implemented CI/CD automation, reduced deployment time from 1 hour to 10 minutes, reduced human errors by 80%"
+            },
+            "skills_growth": {
+              "new_skills": [
+                "Learned Kubernetes container orchestration",
+                "Mastered Go language basics, completed 2 microservice modules"
+              ],
+              "training": "Attended QCon conference and Alibaba Cloud Architect training, total 40 hours",
+              "certifications": "Obtained Alibaba Cloud ACP and CKA certifications"
+            },
+            "team_collaboration": {
+              "mentorship": "Mentored 2 junior engineers, helped them become independent in 3 months",
+              "knowledge_sharing": "Organized 4 internal tech sharing sessions on microservices, performance optimization, and DevOps",
+              "cross_team": "Collaborated closely with product and QA teams, achieved 100% on-time delivery rate"
+            }
+          },
+          "params": {
+            "audience": "manager",
+            "tone": "professional",
+            "length": "medium"
+          }
+        },
+        "webhookUrl": "https://n8n.neican.ai/webhook/generate",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9087f00fd0adab70eff9b6563653ea164d3596f3e5321096b7f8aa701f5f7614"
+  }
+}

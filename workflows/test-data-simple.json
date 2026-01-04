@@ -1,0 +1,51 @@
+{
+    "session_id": "test-session-2025-12-29-001",
+    "answers": {
+        "personal_info": {
+            "name": "Zhang San",
+            "department": "R&D Department",
+            "position": "Senior Software Engineer",
+            "years_in_company": 3,
+            "work_years": 5
+        },
+        "achievements": {
+            "projects": [
+                {
+                    "name": "CRM System Refactoring",
+                    "role": "Tech Lead",
+                    "duration": "March 2024 - August 2024",
+                    "team_size": 5,
+                    "description": "Refactored legacy PHP system to Node.js microservices, improved performance by 50%",
+                    "results": "Response time reduced from 800ms to 200ms, user satisfaction increased by 40%",
+                    "technologies": [
+                        "Node.js",
+                        "MongoDB",
+                        "Redis",
+                        "Docker"
+                    ]
+                }
+            ],
+            "bug_fixes": "Fixed 15 critical bugs throughout the year, system stability improved by 25%",
+            "performance_optimization": "Optimized 12 database queries, average performance improvement of 60%, saved approximately 80,000 RMB/year in server costs",
+            "innovations": "Proposed and implemented CI/CD automation, reduced deployment time from 1 hour to 10 minutes, reduced human errors by 80%"
+        },
+        "skills_growth": {
+            "new_skills": [
+                "Learned Kubernetes container orchestration",
+                "Mastered Go language basics, completed 2 microservice modules"
+            ],
+            "training": "Attended QCon conference and Alibaba Cloud Architect training, total 40 hours",
+            "certifications": "Obtained Alibaba Cloud ACP and CKA certifications"
+        },
+        "team_collaboration": {
+            "mentorship": "Mentored 2 junior engineers, helped them become independent in 3 months",
+            "knowledge_sharing": "Organized 4 internal tech sharing sessions on microservices, performance optimization, and DevOps",
+            "cross_team": "Collaborated closely with product and QA teams, achieved 100% on-time delivery rate"
+        }
+    },
+    "params": {
+        "audience": "manager",
+        "tone": "professional",
+        "length": "medium"
+    }
+}

@@ -1,0 +1,159 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "generate",
+                "authentication": "headerAuth",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-id",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                100,
+                300
+            ],
+            "webhookId": "webhook-generate-id",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "iCbTDgNtVk51bd58",
+                    "name": "NeicanSTT2025Secret"
+                }
+            }
+        },
+        {
+            "id": "extractor-llm-id",
+            "name": "Extractor LLM",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                350,
+                300
+            ],
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.siliconflow.cn/v1/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"Qwen/Qwen2.5-7B-Instruct\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一个专业的信息抽取专家。你的任务是将用户的访谈回答映射到结构化 JSON，严格遵守以下规则。\\n\\n## 核心规则\\n1. **只提取明确提到的信息** - 不得推测或编造\\n2. **数字/日期/人名/奖项必须原文引用** - 一字不差\\n3. **缺失信息填 null 或空数组** - 不要用【待补充】\\n4. **不得脑补细节** - 宁可留空，不要编造\\n\\n## 输出格式\\n严格按照以下 JSON Schema 输出，**只输出 JSON，不要任何解释**：\\n\\n```json\\n{\\n  \\\"basic_info\\\": {\\n    \\\"year\\\": 2024,\\n    \\\"department\\\": null,\\n    \\\"role\\\": null\\n  },\\n  \\\"highlights\\\": [\\n    {\\n      \\\"title\\\": \\\"从 Q1/Q5/Q6/Q7 提取的成果标题\\\",\\n      \\\"actions\\\": [\\\"具体行动\\\"],\\n      \\\"results\\\": [\\\"具体结果\\\"],\\n      \\\"evidence\\\": {\\n        \\\"metrics\\\": [\\\"数据指标，必须是原文数字\\\"],\\n        \\\"feedback\\\": [\\\"他人反馈，必须是原文引用\\\"],\\n        \\\"awards\\\": []\\n      }\\n    }\\n  ],\\n  \\\"challenges\\\": [{\\\"situation\\\": \\\"\\\", \\\"actions\\\": [], \\\"outcome\\\": \\\"\\\"}],\\n  \\\"growth\\\": {\\n    \\\"skills\\\": [],\\n    \\\"reflections\\\": [],\\n    \\\"feedback_received\\\": []\\n  },\\n  \\\"contributions\\\": {\\n    \\\"team_culture\\\": [],\\n    \\\"mentoring\\\": []\\n  },\\n  \\\"future\\\": {\\n    \\\"goals\\\": [],\\n    \\\"support_needed\\\": [],\\n    \\\"career_direction\\\": null\\n  },\\n  \\\"keywords\\\": [\\\"关键词1\\\", \\\"关键词2\\\", \\\"关键词3\\\"]\\n}\\n```\\n\\n访谈回答：\\n{{ JSON.stringify($node[\\\"Webhook\\\"].json[\\\"body\\\"].answers) }}\\n\\n请开始抽取，只输出 JSON。\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"请开始抽取结构化信息。\"\n    }\n  ]\n}",
+                "options": {}
+            },
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "ibUDkwXjaazaG4NH",
+                    "name": "硅基流动"
+                }
+            }
+        },
+        {
+            "id": "parse-extractor-json",
+            "name": "Parse Extractor JSON",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                600,
+                300
+            ],
+            "parameters": {
+                "jsCode": "// 解析 Extractor 输出的 JSON\nconst extractorResponse = $input.item.json.choices[0].message.content;\n\ntry {\n  // 尝试解析 JSON\n  const summaryJson = JSON.parse(extractorResponse);\n  \n  return {\n    json: {\n      summary_json: summaryJson,\n      params: $node[\"Webhook\"].json[\"body\"].params,\n      session_id: $node[\"Webhook\"].json[\"body\"].session_id\n    }\n  };\n} catch (error) {\n  // JSON 解析失败，尝试提取 JSON 部分\n  const jsonMatch = extractorResponse.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    try {\n      const summaryJson = JSON.parse(jsonMatch[0]);\n      return {\n        json: {\n          summary_json: summaryJson,\n          params: $node[\"Webhook\"].json[\"body\"].params,\n          session_id: $node[\"Webhook\"].json[\"body\"].session_id\n        }\n      };\n    } catch (e) {\n      throw new Error('Extractor 输出格式错误: ' + e.message);\n    }\n  }\n  throw new Error('Extractor 未返回有效 JSON');\n}"
+            }
+        },
+        {
+            "id": "writer-llm-id",
+            "name": "Writer LLM",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                850,
+                300
+            ],
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.siliconflow.cn/v1/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"model\": \"Qwen/Qwen2.5-7B-Instruct\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一个专业的职场写作助手。基于结构化数据生成年终总结，严格遵守以下规则。\\n\\n## 核心规则\\n1. **不得添加 summary_json 中不存在的事实** - 特别是数字、奖项、具体案例\\n2. **缺失信息不要编造** - 如果 summary_json 中某字段为 null 或空，跳过该部分\\n3. **压制套话** - 禁用：积极、认真、努力、主动、热情、显著提升、大幅增长、深刻认识到\\n4. **用事实说话** - 优先使用具体数字、具体案例、他人反馈\\n\\n## 输入\\nsummary_json: {{ JSON.stringify($json.summary_json) }}\\n\\n参数：\\n- 受众：{{ $json.params.audience }}\\n- 风格：{{ $json.params.tone }}\\n- 字数：{{ $json.params.length }}\\n\\n## 输出格式\\n严格按照以下 JSON 格式输出，**只输出 JSON，不要任何解释**：\\n\\n```json\\n{\\n  \\\"draft_short\\\": \\\"200字精简版\\\",\\n  \\\"draft_main\\\": \\\"800-1500字正式稿\\\",\\n  \\\"outline\\\": \\\"结构化大纲（Markdown）\\\",\\n  \\\"ppt_outline\\\": \\\"PPT 提纲（10页以内）\\\"\\n}\\n```\\n\\n## 反套话示例\\n❌ 我积极主动地推进了项目\\n✅ 我每周组织 2 次跨部门会议，协调 5 个团队的进度\\n\\n❌ 取得了显著成效\\n✅ 将交付周期从 4 周缩短至 2 周，节省成本约 30 万元\\n\\n请开始生成，只输出 JSON。\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"请开始生成四版本文本。\"\n    }\n  ]\n}",
+                "options": {}
+            },
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "ibUDkwXjaazaG4NH",
+                    "name": "硅基流动"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {
+                    "responseBody": "={\n  \"session_id\": \"{{ $node[\"Parse Extractor JSON\"].json.session_id }}\",\n  \"summary_json\": {{ JSON.stringify($node[\"Parse Extractor JSON\"].json.summary_json) }},\n  \"outputs\": {{ $json[\"choices\"][0][\"message\"][\"content\"] }}\n}"
+                }
+            },
+            "id": "respond-id",
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Extractor LLM",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extractor LLM": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Extractor JSON",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Extractor JSON": {
+            "main": [
+                [
+                    {
+                        "node": "Writer LLM",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Writer LLM": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "9087f00fd0adab70eff9b6563653ea164d3596f3e5321096b7f8aa701f5f7614"
+    }
+}

@@ -1,19 +1,33 @@
 {
   "name": "talk2report",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:vite\"",
+    "dev:api": "node server.js",
+    "dev:vite": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "framer-motion": "^12.23.26",
+    "lucide-react": "^0.344.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.3",
     "@vitejs/plugin-react": "^4.3.2",
+    "autoprefixer": "^10.4.17",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
     "vite": "^6.0.0"
   }
 }

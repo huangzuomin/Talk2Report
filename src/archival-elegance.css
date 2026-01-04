@@ -1,0 +1,488 @@
+/**
+ * Archival Elegance - 档案雅致美学系统
+ * 为Talk2Report 2.0定制
+ */
+
+/* ============================================
+   CSS变量定义
+   ============================================ */
+
+:root {
+  /* 品牌色 - 深海军蓝 + 烫金 */
+  --deep-navy: #1e3a5f;
+  --bronze-gold: #c9a961;
+  --bronze-light: #dbc48a;
+  --bronze-dark: #a68b4d;
+
+  /* 档案质感色盘 */
+  --linen-cream: #f5f2eb;
+  --parchment: #faf8f3;
+  --ink-black: #1a1a1a;
+  --charcoal: #2d2d2d;
+  --soft-gray: #6b6b6b;
+
+  /* 烫金效果渐变 */
+  --gold-gradient: linear-gradient(135deg,
+    var(--bronze-gold) 0%,
+    var(--bronze-light) 25%,
+    #fff 50%,
+    var(--bronze-light) 75%,
+    var(--bronze-gold) 100%
+  );
+
+  /* 阴影系统 - 更有深度 */
+  --shadow-elegant: 0 2px 8px rgba(30, 58, 95, 0.08),
+                    0 8px 24px rgba(30, 58, 95, 0.04);
+  --shadow-gold: 0 4px 16px rgba(201, 169, 97, 0.25);
+  --shadow-deep: 0 8px 32px rgba(30, 58, 95, 0.12);
+}
+
+/* ============================================
+   纹理背景层
+   ============================================ */
+
+/* 亚麻纸纹理背景 */
+.bg-linen-texture {
+  background-color: var(--linen-cream);
+  background-image:
+    /* 噪点纹理 */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"),
+    /* 细微网格 */
+    linear-gradient(rgba(30, 58, 95, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 58, 95, 0.02) 1px, transparent 1px);
+  background-size: 256px 256px, 20px 20px, 20px 20px;
+}
+
+/* 羊皮纸纹理 */
+.bg-parchment {
+  background-color: var(--parchment);
+  background-image:
+    radial-gradient(ellipse at 20% 30%, rgba(201, 169, 97, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(30, 58, 95, 0.02) 0%, transparent 50%);
+}
+
+/* 档案纸纹理 - 用于卡片 */
+.bg-archival-paper {
+  background-color: #fff;
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================
+   烫金效果
+   ============================================ */
+
+/* 烫金文字效果 */
+.text-gilded {
+  background: var(--gold-gradient);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--bronze-gold);
+  font-weight: 600;
+}
+
+/* 烫金边框 */
+.border-gilded {
+  position: relative;
+  background: linear-gradient(135deg, #fff 0%, #fafafa 100%);
+  border: 1px solid rgba(201, 169, 97, 0.2);
+}
+
+.border-gilded::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  background: var(--gold-gradient);
+  background-size: 200% 200%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  border-radius: inherit;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.border-gilded:hover::before {
+  opacity: 0.5;
+}
+
+/* 烫金印章效果 */
+.seal-gilded {
+  position: relative;
+  background: linear-gradient(135deg,
+    var(--bronze-gold) 0%,
+    var(--bronze-light) 50%,
+    var(--bronze-dark) 100%
+  );
+  box-shadow:
+    0 2px 8px rgba(201, 169, 97, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.seal-gilded::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ============================================
+   增强阴影系统
+   ============================================ */
+
+.shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
+
+.shadow-gold-glow {
+  box-shadow:
+    0 2px 8px rgba(201, 169, 97, 0.15),
+    0 4px 16px rgba(201, 169, 97, 0.1);
+}
+
+.shadow-deep {
+  box-shadow: var(--shadow-deep);
+}
+
+/* 内阴影 - 营造凹陷感 */
+.shadow-inner-archival {
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.06),
+    inset 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   动画效果
+   ============================================ */
+
+@keyframes shimmer-gold {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes pulse-gold {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* 烫金shimmer效果 */
+.animate-shimmer-gold {
+  animation: shimmer-gold 3s linear infinite;
+}
+
+/* 微微浮动 */
+.animate-float-subtle {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+
+/* 金色脉冲 */
+.animate-pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+/* ============================================
+   装饰性元素
+   ============================================ */
+
+/* 角落装饰 */
+.corner-ornament {
+  position: relative;
+}
+
+.corner-ornament::before,
+.corner-ornament::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--bronze-gold);
+  opacity: 0.4;
+  transition: all 0.3s ease;
+}
+
+.corner-ornament::before {
+  top: 0;
+  left: 0;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.corner-ornament::after {
+  top: 0;
+  right: 0;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.corner-ornament:hover::before,
+.corner-ornament:hover::after {
+  opacity: 0.7;
+  width: 16px;
+  height: 16px;
+}
+
+/* 底部装饰线 */
+.divider-gilded {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--bronze-gold) 20%,
+    var(--bronze-light) 50%,
+    var(--bronze-gold) 80%,
+    transparent 100%
+  );
+  opacity: 0.5;
+}
+
+/* ============================================
+   消息气泡优化
+   ============================================ */
+
+/* 用户消息 - 墨水质感 */
+.message-bubble-user {
+  background: linear-gradient(135deg,
+    var(--deep-navy) 0%,
+    #2a4a73 100%
+  );
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-bubble-user::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gold-gradient);
+  background-size: 200% 200%;
+  opacity: 0.6;
+}
+
+/* AI消息 - 羊皮纸质感 */
+.message-bubble-ai {
+  background: #fff;
+  color: var(--ink-black);
+  border-left: 3px solid var(--bronze-gold);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.message-bubble-ai::before {
+  content: '"';
+  position: absolute;
+  top: -8px;
+  left: 8px;
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  color: var(--bronze-gold);
+  opacity: 0.15;
+  line-height: 1;
+}
+
+/* ============================================
+   成就卡片增强
+   ============================================ */
+
+/* 空卡片 - 待填写 */
+.achievement-card-empty {
+  background: linear-gradient(135deg,
+    rgba(245, 242, 235, 0.5) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  border: 1px dashed rgba(201, 169, 97, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.achievement-card-empty:hover {
+  background: linear-gradient(135deg,
+    rgba(201, 169, 97, 0.08) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  border-color: rgba(201, 169, 97, 0.5);
+}
+
+/* 填充卡片 - 烫金证书 */
+.achievement-card-filled {
+  background: linear-gradient(135deg,
+    #fff 0%,
+    var(--linen-cream) 100%
+  );
+  border: 1px solid var(--bronze-gold);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 12px rgba(201, 169, 97, 0.15),
+    0 8px 24px rgba(30, 58, 95, 0.08);
+}
+
+.achievement-card-filled::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gold-gradient);
+  background-size: 200% 200%;
+}
+
+.achievement-card-filled::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle at center,
+    rgba(201, 169, 97, 0.1) 0%,
+    transparent 70%
+  );
+}
+
+/* 盖章动画 */
+.stamp-seal {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gold-gradient);
+  background-size: 200% 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 4px 12px rgba(201, 169, 97, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  position: relative;
+  z-index: 10;
+}
+
+.stamp-seal::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 2px dashed var(--bronze-gold);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+/* ============================================
+   进度条增强
+   ============================================ */
+
+.progress-gilded {
+  height: 8px;
+  background: rgba(201, 169, 97, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.progress-gilded-bar {
+  height: 100%;
+  background: var(--gold-gradient);
+  background-size: 200% 200%;
+  border-radius: 4px;
+  position: relative;
+  box-shadow:
+    0 0 8px rgba(201, 169, 97, 0.5),
+    0 0 16px rgba(201, 169, 97, 0.3);
+}
+
+.progress-gilded-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: shimmer-gold 2s linear infinite;
+}
+
+/* ============================================
+   滚动条美化
+   ============================================ */
+
+.custom-scrollbar-archival::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar-archival::-webkit-scrollbar-track {
+  background: rgba(201, 169, 97, 0.05);
+  border-radius: 4px;
+}
+
+.custom-scrollbar-archival::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg,
+    var(--bronze-gold) 0%,
+    var(--bronze-dark) 100%
+  );
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.custom-scrollbar-archival::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg,
+    var(--bronze-light) 0%,
+    var(--bronze-gold) 100%
+  );
+}
+
+/* ============================================
+   工具类
+   ============================================ */
+
+.text-shadow-elegant {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.text-glow-gold {
+  text-shadow:
+    0 0 8px rgba(201, 169, 97, 0.3),
+    0 0 16px rgba(201, 169, 97, 0.2);
+}

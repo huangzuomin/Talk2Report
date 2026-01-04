@@ -1,0 +1,201 @@
+{
+  "name": "Talk2Report - Interview Workflow (Agent A)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "interview/next-step",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-interview",
+      "name": "Webhook - Interview Next Step",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "talk2report-interview-v2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "val-session",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "val-answer",
+              "name": "user_answer",
+              "value": "={{ $json.body.user_answer }}",
+              "type": "string"
+            },
+            {
+              "id": "val-state",
+              "name": "current_state",
+              "value": "={{ $json.body.current_state }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-input",
+      "name": "Extract Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "content": "=## Agent A: Interviewer\n\n### 任务\n通过苏格拉底式提问收集用户本年度的工作经历。\n\n### 访谈框架\n1. 核心成果 (achievements)\n2. 挑战应对 (challenges)\n3. 个人成长 (growth)\n4. 团队贡献 (team)\n5. 未来规划 (future)\n\n### 当前状态\n- 会话ID: {{ $json.session_id }}\n- 用户回答: {{ $json.user_answer }}\n- 完成度: {{ $json.current_state.completion_rate || 0 }}\n- 已填充槽位: {{ $json.current_state.slots.filter(s => s.filled).map(s => s.name).join(', ') }}\n\n### 你的任务\n1. 分析用户的回答，提取关键信息\n2. 更新对应的槽位状态\n3. 判断访谈是否应该结束\n4. 决定下一个问题或结束访谈\n\n### 输出格式\n请返回 JSON 格式:\n```json\n{\n  \"thinking\": \"你的思考过程\",\n  \"extracted_info\": {\n    \"slot_name\": \"提取的信息\"\n  },\n  \"next_question\": \"下一个问题（如果未完成）\",\n  \"finished\": false,\n  \"completion_message\": \"完成时的总结语\"\n}\n```",
+        "height": 400,
+        "width": 400,
+        "color": 4
+      },
+      "id": "prompt-sticky",
+      "name": "Agent A System Prompt",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "resource": "chat",
+        "operation": "create",
+        "model": {
+          "__rl": true,
+          "value": "deepseek-reasoner",
+          "mode": "list",
+          "cachedResultName": "deepseek-reasoner"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "你是一位资深职业咨询师，擅长通过苏格拉底式提问帮助用户挖掘深层次的职业成就和成长。\n\n**核心任务**：通过多轮对话，收集用户本年度的工作经历，为生成年终总结做准备。\n\n**访谈框架**（必须严格遵循）：\n1. 核心成果（成就、项目、业绩）\n2. 挑战应对（困难、解决方案、结果）\n3. 个人成长（新技能、反思、改进）\n4. 团队贡献（协作、指导、文化）\n5. 未来规划（目标、支持需求）\n\n**约束规则**：\n- 每个主题询问2-3个问题，深入挖掘细节\n- 全程控制在10-15个问题内\n- 禁止偏离到非工作话题（天气、娱乐、政治等）\n- 禁止无限追问，适时转入下一个主题\n- 对话满8-12个问题后，准备结束访谈\n\n**当前状态**：\n- 会话ID: {{ $json.session_id }}\n- 用户回答: {{ $json.user_answer }}\n- 完成度: {{ $json.current_state.completion_rate || 0 }}%\n- 已填充槽位: {{ $json.current_state.slats.filter(s => s.filled).map(s => s.name).join(', ') || '无' }}\n\n**你的任务**：\n1. 分析用户的回答，提取关键信息并更新对应槽位\n2. 根据完成度决定是继续提问还是结束访谈\n3. 如果继续，提出下一个深入的问题\n4. 如果结束，提供总结语\n\n**输出格式**（必须返回 JSON）：\n```json\n{\n  \"thinking\": \"你的思考过程和推理\",\n  \"extracted_info\": {\n    \"achievements\": \"提取的成果信息\",\n    \"challenges\": \"提取的挑战信息\",\n    \"growth\": \"提取的成长信息\",\n    \"team\": \"提取的团队信息\",\n    \"future\": \"提取的规划信息\"\n  },\n  \"updated_slots\": [\n    {\"name\": \"achievements\", \"value\": \"...\", \"filled\": true}\n  ],\n  \"next_question\": \"下一个问题（未结束时）\",\n  \"finished\": false,\n  \"completion_message\": \"访谈完成时的总结语\"\n}\n```"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.user_answer }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 1.0,
+          "maxTokens": 2000
+        }
+      },
+      "id": "agent-a-call",
+      "name": "Agent A - Call DeepSeek Reasoner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "DEEPSEEK_API_CREDENTIAL_ID",
+          "name": "DeepSeek API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 解析 DeepSeek Reasoner 响应\nconst response = $input.item.json;\n\n// 提取 reasoning_content (思考过程) 和 content (最终回答)\nconst reasoning = response.choices?.[0]?.message?.reasoning_content || '';\nconst content = response.choices?.[0]?.message?.content || '';\n\n// 尝试从 content 中提取 JSON\nlet parsedResult;\ntry {\n  // 查找 JSON 代码块\n  const jsonMatch = content.match(/```json\\s*([\\s\\S]*?)\\s*```/);\n  if (jsonMatch) {\n    parsedResult = JSON.parse(jsonMatch[1]);\n  } else {\n    // 尝试直接解析\n    parsedResult = JSON.parse(content);\n  }\n} catch (e) {\n  // 如果解析失败，使用原始内容\n  parsedResult = {\n    thinking: reasoning,\n    next_question: content,\n    extracted_info: {},\n    finished: false,\n    updated_slots: []\n  };\n}\n\n// 计算新的完成度\nconst currentState = $('Extract Input').item.json.current_state || { slots: [], completion_rate: 0 };\nlet updatedSlots = currentState.slots || [];\n\n// 更新槽位\nif (parsedResult.updated_slots && parsedResult.updated_slots.length > 0) {\n  updatedSlots = updatedSlots.map(slot => {\n    const update = parsedResult.updated_slots.find(u => u.name === slot.name);\n    if (update) {\n      return { ...slot, ...update };\n    }\n    return slot;\n  });\n}\n\n// 计算完成度\nconst filledCount = updatedSlots.filter(s => s.filled).length;\nconst totalCount = updatedSlots.length;\nconst completionRate = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;\n\nreturn {\n  question: parsedResult.next_question || '',\n  thinking: parsedResult.thinking || reasoning || '',\n  extracted_info: parsedResult.extracted_info || {},\n  finished: parsedResult.finished || false,\n  completion_message: parsedResult.completion_message || '',\n  updated_state: {\n    slots: updatedSlots,\n    completion_rate: completionRate\n  }\n};"
+      },
+      "id": "parse-response",
+      "name": "Parse Agent Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"question\": $json.question,\n  \"thinking\": $json.thinking,\n  \"extracted_info\": $json.extracted_info,\n  \"finished\": $json.finished,\n  \"completion_message\": $json.completion_message,\n  \"updated_state\": {\n    \"slots\": $json.updated_state.slots,\n    \"completion_rate\": $json.updated_state.completion_rate\n  },\n  \"timestamp\": new Date().toISOString()\n} }}"
+      },
+      "id": "response-node",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "content": "## 访谈工作流说明\n\n### 触发方式\nPOST /webhook/interview/next-step\n\n### 请求体\n```json\n{\n  \"session_id\": \"uuid\",\n  \"user_answer\": \"用户的回答\",\n  \"current_state\": {\n    \"slots\": [\n      {\"name\": \"achievements\", \"value\": null, \"filled\": false},\n      {\"name\": \"challenges\", \"value\": null, \"filled\": false},\n      {\"name\": \"growth\", \"value\": null, \"filled\": false},\n      {\"name\": \"team\", \"value\": null, \"filled\": false},\n      {\"name\": \"future\", \"value\": null, \"filled\": false}\n    ],\n    \"completion_rate\": 0\n  }\n}\n```\n\n### 响应体\n```json\n{\n  \"question\": \"下一个问题\",\n  \"thinking\": \"AI思考过程\",\n  \"extracted_info\": {...},\n  \"finished\": false,\n  \"updated_state\": {...}\n}\n```\n\n### 状态管理\n- 槽位状态由客户端维护\n- 每次请求返回更新后的状态\n- 客户端负责保存和传递最新状态",
+        "height": 500,
+        "width": 400,
+        "color": 3
+      },
+      "id": "workflow-notes",
+      "name": "Workflow Documentation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [50, 100]
+    }
+  ],
+  "connections": {
+    "Webhook - Interview Next Step": {
+      "main": [
+        [
+          {
+            "node": "Extract Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Input": {
+      "main": [
+        [
+          {
+            "node": "Agent A - Call DeepSeek Reasoner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent A - Call DeepSeek Reasoner": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-01-03T00:00:00.000Z",
+      "updatedAt": "2025-01-03T00:00:00.000Z",
+      "id": "talk2report-agent-a",
+      "name": "Agent A: Interviewer"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-03T00:00:00.000Z",
+  "versionId": "1.0.0"
+}

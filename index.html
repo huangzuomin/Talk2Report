@@ -1,13 +1,107 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Talk2Report | 动嘴成稿</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Talk2Report | 智能访谈助手</title>
+
+  <!-- Google Fonts: Playfair Display, IBM Plex Sans, IBM Plex Serif, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;500;600;700;900&display=swap"
+    rel="stylesheet">
+
+  <!-- CSS Variables and Global Styles -->
+  <style>
+    :root {
+      /* 主色 - 深藏青 */
+      --color-primary: #1e3a5f;
+      --color-primary-light: #2d5a8f;
+      --color-primary-dark: #0f1f33;
+
+      /* 强调色 - 古铜金 */
+      --color-accent: #c9a961;
+      --color-accent-light: #dbc48a;
+      --color-accent-dark: #a68b4d;
+
+      /* 背景色 */
+      --color-bg-primary: #ffffff;
+      --color-bg-secondary: #f8f9fa;
+      --color-bg-tertiary: #f1f3f5;
+
+      /* 文本色 */
+      --color-text-primary: #1a1a1a;
+      --color-text-secondary: #5c6b7f;
+      --color-text-tertiary: #8d99ae;
+
+      /* 边框色 */
+      --color-border-light: #e8ecf0;
+      --color-border-medium: #d1d9e0;
+      --color-border-dark: #9ca3af;
+
+      /* 阴影 */
+      --shadow-sm: 0 1px 2px rgba(30, 58, 95, 0.05);
+      --shadow-md: 0 4px 6px rgba(30, 58, 95, 0.07);
+      --shadow-lg: 0 10px 15px rgba(30, 58, 95, 0.1);
+      --shadow-xl: 0 20px 25px rgba(30, 58, 95, 0.15);
+
+      /* 圆角 */
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-2xl: 1.5rem;
+    }
+
+    /* 强制极致全屏覆盖 */
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    #root,
+    #app {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+      background-color: #ffffff !important;
+      overflow: hidden !important;
+      display: block !important;
+      /* 隐藏滚动条占位 */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    /* 对 Chrome/Safari/Edge 隐藏滚动条 */
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    #root::-webkit-scrollbar,
+    #app::-webkit-scrollbar {
+      display: none;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      color: #1a1a1a;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

@@ -1,0 +1,173 @@
+{
+  "name": "AI Reporter Next Step (v2.0 Optimized)",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是顶级商业调研记者与知识萃取大师，正在协助用户完成深度的“年度价值总结”访谈。\n\n### 访谈背景与实时状态\n- 访谈进度统计 (stats): {{ JSON.stringify($json.stats) }}\n- 已挖掘历史记录 (follow_up_history): {{ JSON.stringify($json.follow_up_history) }}\n- 全量事实清单 (answers): {{ JSON.stringify($json.answers) }}\n\n### 本轮访谈素材\n- 当前核心命题: {{ $json.current_question.text }}\n- 用户口述原始数据: \"{{ $json.current_answer }}\"\n\n### 决策逻辑：萃取大师的判定准则\n1. 深度萃取判定 (Extraction standard)：\n   - 检查回答是否符合 STAR 原则（情境、任务、行动、结果）。\n   - 重点探测：是否存在“含糊动词”（如：参与、推动、负责）、“空洞形容词”（如：显著提升、效果极佳）或“孤立结果”（没有过程的数据）。\n   - 若信息属于上述“低含金量”状态，必须发起 1 条针对性追问。\n\n2. 关键信息挖掘方向 (Priority)：\n   - 寻找【矛盾点】：为什么这个挑战难？当时最难的决策瞬间是什么？\n   - 寻找【方法论】：如果明年再做一次，你沉淀下来的 123 步骤是什么？\n   - 寻找【量化杠杆】：这个行动带来了多少增长/节省，对公司大局的贡献是什么？\n\n3. 动态止损策略 (Flow Control)：\n   - 若当前回答已具备“具体行动+量化结果”，或用户已明确表达没有更多细节，不要纠缠。\n   - 若 base_coverage > 0.8 且核心亮点已完成 2-3 个 STAR 闭环，标记 done: true。\n\n### 输出协议 (Strict JSON Only)\n必须严格输出以下格式，严禁包含 Markdown 代码块或多余文字：\n{\n  \"next_question\": {\n    \"id\": \"string_id\",\n    \"text\": \"引导话术 + 深度追问\"\n  },\n  \"follow_up\": boolean,\n  \"done\": boolean,\n  \"note\": \"总编视角的逻辑分析\"\n}"
+      },
+      "id": "1f99847d-f2af-42a8-ac66-7e081bc84c55",
+      "name": "AI Decision Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        -32,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "interview/next_step",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "8f20e0b5-c727-4127-9055-21885d8c6624",
+      "name": "Webhook Start1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        384
+      ],
+      "webhookId": "68fe2975-4d39-43ae-9a59-0c4d4adfb9aa"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. 数据预处理：兼容 n8n 2.0 的数据访问\n// 注意：Webhook 传入的数据通常嵌套在 body 字段下\nconst rawData = $input.first().json;\nconst body = rawData.body || rawData; // 自动兼容带 body 嵌套或不带嵌套的结构\n\nconst answers = body.answers || {};\nconst current = body.current_question || {};\n\n// 定义 12 个基础问题的 ID (Q1 到 Q12)\nconst baseIds = Array.from({ length: 12 }, (_, i) => `Q${i + 1}`);\n\n// 过滤出已回答的基础题并计算覆盖率\nconst answeredBase = baseIds.filter(id => (answers[id] || '').trim() !== '');\nconst baseCoverage = answeredBase.length / baseIds.length;\n\n// 计算当前回答的长度（去除首尾空格）\nconst currentAnswer = (answers[current.id] || '').trim();\nconst currentLen = currentAnswer.length;\n\n// 返回构建后的上下文对象，供后续 AI 决策节点使用\nreturn {\n  session_id: body.session_id,\n  params: body.params || {},\n  current_question: current,\n  current_answer: currentAnswer,\n  answers,\n  follow_up_history: body.follow_up_history || [],\n  stats: {\n    base_coverage: baseCoverage,\n    current_len: currentLen\n  }\n};"
+      },
+      "id": "b42025c1-9cb5-4a17-9614-fe1218482625",
+      "name": "Prep Context1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 2. 后处理：逻辑兜底与响应构造\nconst llmOutput = $input.first().json.text;\nlet result;\n\ntry {\n  // 尝试解析 LLM 的文本输出为 JSON\n  result = typeof llmOutput === 'string' ? JSON.parse(llmOutput.replace(/```json|```/g, '')) : llmOutput;\n} catch (e) {\n  result = { follow_up: false, done: false };\n}\n\n// 默认兜底逻辑：顺序推进下一道题\nconst baseIds = Array.from({length:12}, (_,i)=>`Q${i+1}`);\nconst contextNode = $(\"Prep Context1\").first().json;\nconst answers = contextNode.answers || {};\nconst currentId = contextNode.current_question?.id;\n\nconst currentIndex = baseIds.indexOf(currentId);\nconst fallbackIndex = currentIndex >= 0 ? Math.min(currentIndex + 1, baseIds.length - 1) : 0;\n\nconst response = {\n  next_question: result?.next_question || { id: baseIds[fallbackIndex], text: \"\" },\n  follow_up: Boolean(result?.follow_up),\n  done: Boolean(result?.done),\n  session_id: contextNode.session_id\n};\n\nreturn response;"
+      },
+      "id": "3a175553-fa21-45f7-b5bd-9b98643a91de",
+      "name": "Post Process1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c8d5427d-1301-4570-b7c9-5160a014be90",
+      "name": "Respond to Webhook2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        592
+      ],
+      "id": "570132a0-97a2-4a1b-a227-900c577bfac3",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Decision Chain": {
+      "main": [
+        [
+          {
+            "node": "Post Process1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Start1": {
+      "main": [
+        [
+          {
+            "node": "Prep Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Context1": {
+      "main": [
+        [
+          {
+            "node": "AI Decision Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Process1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Decision Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "2b93e231-9481-4ae2-a989-49748035f0f9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9087f00fd0adab70eff9b6563653ea164d3596f3e5321096b7f8aa701f5f7614"
+  },
+  "id": "spPeCYtL1Y0qo2ae",
+  "tags": []
+}

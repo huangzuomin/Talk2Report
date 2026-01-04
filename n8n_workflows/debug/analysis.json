@@ -1,0 +1,166 @@
+{
+  "httpNodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.0,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一个专业的归档员 Agent B。你的任务是从对话历史中提取结构化数据，并严格按照 JSON 格式输出。\\n\\n需要提取的字段 Schema 如下：\\n- basic_info: 基本信息\\n- highlights: 核心成果\\n- challenges: 挑战应对\\n- growth: 个人成长\\n- team_contribution: 团队贡献\\n- future_goals: 未来规划\\n\\n重要规则：\\n1. 只提取明确提及的信息，不要编造。\\n2. 数字和奖项原样引用。\\n3. 信息缺失字段返回 null。\\n4. 直接返回 JSON 对象，不要包含 markdown 代码块标记。\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ JSON.stringify($json) }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "3954fa6b-e5c3-4b4b-b87f-d049288e84bc",
+      "name": "Agent B - Extract Factsheet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -528,
+        720
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.7,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"{{ $json.system_instruction }}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"这里是核心数据，请根据系统指令生成报告：\\n\\n【用户偏好】\\n{{ JSON.stringify($json.preferences) }}\\n\\n【核心数据 (Factsheet)】\\n{{ JSON.stringify($json.factsheet) }}\\n\\n【上下文】\\n{{ $json.iteration > 1 ? '这是修改稿，请结合之前的 Critic 意见进行优化。' : '这是初稿。' }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "c12da490-686d-4e2e-9140-0434901cc0fb",
+      "name": "Call Writer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        720
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"temperature\": 0.0,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一个严格的报告评审专家 Agent D (Critic)。\\n\\n请根据以下4个维度验证报告质量：\\n1. 逻辑一致性 (前后是否矛盾)\\n2. 因果关系 (成果是否有行动支撑)\\n3. 证据支撑 (数据事实是否可信)\\n4. 完整性 (是否涵盖所有重要方面)\\n\\n评分规则：\\n- < 80分：不合格，必须重写 (rewrite_needed = true)\\n- 80-89分：良好\\n- 90-100分：优秀\\n\\n请严格按照以下 JSON 格式输出（不要输出 markdown）：\\n{\\n  \\\"passed\\\": boolean,\\n  \\\"score\\\": number,\\n  \\\"verdict\\\": \\\"简短评价\\\",\\n  \\\"issues\\\": [\\\"问题点1\\\", \\\"问题点2\\\"],\\n  \\\"rewrite_needed\\\": boolean\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"请评审以下生成的报告草稿：\\n\\n{{ JSON.stringify($json) }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "49a24788-9cd2-4d94-a3b7-8074f8aec216",
+      "name": "Agent D - Validate Quality",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        720
+      ],
+      "credentials": {
+        "deepSeekApi": {
+          "id": "t3d0RWOyYh5yA9DW",
+          "name": "DeepSeek account"
+        }
+      }
+    }
+  ],
+  "webhookNodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8654915c-1e8b-4423-9f34-0633df67b157",
+      "name": "Webhook - Generate Report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1824,
+        864
+      ],
+      "webhookId": "talk2report-generate-v3"
+    }
+  ],
+  "respondNodes": [
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"error\": \"Validation failed\",\n  \"message\": \"Missing required fields\",\n  \"required\": [\"session_id\", \"conversation_history\", \"preferences\"],\n  \"received\": {\n    \"has_session_id\": $json.has_session_id,\n    \"has_conversation_history\": $json.has_conversation,\n    \"has_preferences\": $json.has_preferences\n  },\n  \"timestamp\": new Date().toISOString()\n} }}",
+        "options": {}
+      },
+      "id": "56538de0-4d1e-4995-8b6d-474a5656d863",
+      "name": "Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1072,
+        1024
+      ],
+      "notes": "返回验证错误响应"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"error\": \"Agent B (Archivist) failed\",\n  \"details\": {\n    \"message\": \"Failed to extract factsheet from conversation history\",\n    \"raw_response\": $json,\n    \"timestamp\": new Date().toISOString()\n  },\n  \"session_id\": $('Extract Request Data').item.json.session_id\n} }}",
+        "options": {}
+      },
+      "id": "d6b787e6-2c33-4c65-823b-b0b51553373e",
+      "name": "Agent B Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "151e2416-5edf-4a65-8eae-d944d9a5babb",
+      "name": "Return Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2032,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "5bef8534-5ae7-4ac6-889c-3ee82dbe257a",
+      "name": "Return with Warning",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2528,
+        1024
+      ]
+    }
+  ],
+  "connectionErrors": [],
+  "credentialsUsed": []
+}

@@ -1,0 +1,316 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure form elements have default text color */
+input,
+select,
+textarea {
+  color: #1a1a1a;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8d99ae;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  color: #8d99ae;
+}
+
+/* Custom Styles - Editorial Professional Theme */
+@layer components {
+
+  /* Custom Scrollbar - 精致版 */
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full;
+    background-color: #d1d9e0;
+    transition: background-color 0.2s;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+  }
+
+  /* Thinking Process - Enhanced Version */
+  .thinking-process-container {
+    @apply rounded-lg my-2 overflow-hidden;
+    background: linear-gradient(135deg, rgba(254, 243, 199, 1) 0%, rgba(253, 230, 138, 0.5) 100%);
+    border: 2px solid rgba(202, 138, 4, 0.3);
+  }
+
+  .thinking-process-header {
+    @apply w-full px-3 py-2.5 flex items-center justify-between cursor-pointer transition-all;
+    background: transparent;
+    border: none;
+  }
+
+  .thinking-process-header:hover {
+    background: rgba(202, 138, 4, 0.1);
+  }
+
+  .thinking-process-header-left {
+    @apply flex items-center gap-2;
+  }
+
+  .thinking-process-title {
+    @apply font-semibold text-sm;
+    color: rgb(161, 98, 7);
+  }
+
+  .thinking-process-toggle {
+    @apply text-xs font-medium;
+    color: rgb(180, 83, 9);
+  }
+
+  .thinking-process-summary {
+    @apply px-3 pb-2.5 text-sm italic;
+    color: rgb(146, 64, 14);
+  }
+
+  .thinking-process-content-wrapper {
+    @apply overflow-hidden;
+  }
+
+  .thinking-process-content {
+    @apply px-3 pb-3 whitespace-pre-wrap font-mono overflow-x-auto leading-relaxed;
+    background-color: rgba(254, 243, 199, 0.5);
+    color: rgb(120, 53, 15);
+    font-size: 0.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .thinking-process-content {
+      font-size: 0.8125rem;
+    }
+  }
+
+  /* Agent Terminal */
+  .agent-terminal {
+    background-color: #1e3a5f;
+    color: #ffffff;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    max-height: 24rem;
+    overflow-y: auto;
+    font-size: 0.875rem;
+  }
+
+  .agent-log {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .agent-log-timestamp {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .agent-log-name {
+    font-weight: 600;
+    color: #c9a961;
+  }
+
+  .agent-log-info {
+    color: #3b82f6;
+  }
+
+  .agent-log-success {
+    color: #22c55e;
+  }
+
+  .agent-log-warning {
+    color: #f97316;
+  }
+
+  .agent-log-error {
+    color: #ef4444;
+  }
+
+  /* Chat Input */
+  .chat-input {
+    width: 100%;
+    padding: 1rem 1rem;
+    border: 2px solid #d1d9e0;
+    border-radius: 0.75rem;
+    outline: none;
+    transition: all 0.2s;
+    resize: none;
+    background-color: #ffffff;
+    color: #1a1a1a;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .chat-input::placeholder {
+    color: #8d99ae;
+  }
+
+  .chat-input:focus {
+    border-color: #c9a961;
+    box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.2);
+  }
+
+  /* Markdown Content - 专业排版 */
+  .markdown-content {
+    color: #1a1a1a;
+    line-height: 1.625;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3 {
+    font-family: 'IBM Plex Serif', Georgia, serif;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .markdown-content h1 {
+    font-size: 2.25rem;
+  }
+
+  .markdown-content h2 {
+    font-size: 1.875rem;
+  }
+
+  .markdown-content h3 {
+    font-size: 1.5rem;
+  }
+
+  .markdown-content p {
+    margin-bottom: 0.75rem;
+  }
+
+  .markdown-content ul,
+  .markdown-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .markdown-content li {
+    font-size: 1rem;
+  }
+
+  .markdown-content code {
+    background-color: #f1f3f5;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1e3a5f;
+  }
+
+  .markdown-content pre {
+    background-color: #f1f3f5;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border: 1px solid #e8ecf0;
+  }
+
+  .markdown-content pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: 0.75rem;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 9999px;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Line Clamp - 多行截断 */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Safe Area for Mobile */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
