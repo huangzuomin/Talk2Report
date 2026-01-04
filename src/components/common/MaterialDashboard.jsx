@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { SLOT_CATEGORIES } from '../config/ReportState';
+import { SLOT_CATEGORIES } from '../../config/ReportState';
 import { CheckCircle2, Circle, AlertCircle, SkipForward, ChevronRight, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

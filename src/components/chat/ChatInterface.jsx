@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { MessageBubble } from './MessageBubble';
 import { InputArea } from './InputArea';
-import { useInterview } from '../hooks/useDeepSeek';
+import { useInterview } from '../../hooks/useDeepSeek';
 import { Send, RotateCcw, Sparkles } from 'lucide-react';
 
 /**

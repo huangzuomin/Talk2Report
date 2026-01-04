@@ -126,12 +126,10 @@ function App() {
 
   return (
     <div id="app" className={view === 'chat' ? "h-screen overflow-hidden" : "min-h-screen"}>
-      {/* ChatInterfaceV4: 在chat或result失败时保持挂载 */}
-      {(view === 'chat' || (view === 'result' && result?.success === false)) && (
-        <div className={view === 'chat' ? 'block' : 'hidden'}>
-          <ChatInterfaceV4 onComplete={handleInterviewComplete} />
-        </div>
-      )}
+      {/* ChatInterfaceV4: 始终挂载以保持状态，只在非chat阶段隐藏 */}
+      <div className={view === 'chat' ? 'block' : 'hidden'}>
+        <ChatInterfaceV4 onComplete={handleInterviewComplete} />
+      </div>
 
       {view === 'setup' && (
         <div className="min-h-screen bg-linen-texture">

@@ -1,21 +1,78 @@
 /**
  * useInterviewMachine - 混合式访谈状态机
  * 核心逻辑：Extract -> Update -> Decide -> Ask
+ *
+ * 新增：sessionStorage 持久化，确保状态在视图切换时不丢失
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { callAgentA, callAgentAWithN8N, callAgentB } from '../services/deepseek-client';
 import { INITIAL_STATE, calculateCompletion } from '../config/ReportState';
 
+const STORAGE_KEY = 'talk2report_interview_state';
+
 export function useInterviewMachine() {
-  const [state, setState] = useState(INITIAL_STATE);
-  const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentThinking, setCurrentThinking] = useState('');
-  const [error, setError] = useState(null);
-  const [isStarted, setIsStarted] = useState(false);
+  // 从 sessionStorage 恢复状态（如果存在）
+  const getInitialState = () => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('[Interview Machine] Restoring state from sessionStorage:', {
+          messages: parsed.messages?.length,
+          slots: parsed.state?.slots?.filter(s => s.value)?.length,
+          isStarted: parsed.isStarted
+        });
+        return {
+          state: parsed.state || INITIAL_STATE,
+          messages: parsed.messages || [],
+          isLoading: false, // 恢复时不应该是 loading 状态
+          currentThinking: '',
+          error: null,
+          isStarted: parsed.isStarted || false,
+          sessionId: parsed.sessionId || null
+        };
+      }
+    } catch (err) {
+      console.error('[Interview Machine] Failed to restore state:', err);
+    }
+    return {
+      state: INITIAL_STATE,
+      messages: [],
+      isLoading: false,
+      currentThinking: '',
+      error: null,
+      isStarted: false,
+      sessionId: null
+    };
+  };
+
+  const initialState = getInitialState();
+  const [state, setState] = useState(initialState.state);
+  const [messages, setMessages] = useState(initialState.messages);
+  const [isLoading, setIsLoading] = useState(initialState.isLoading);
+  const [currentThinking, setCurrentThinking] = useState(initialState.currentThinking);
+  const [error, setError] = useState(initialState.error);
+  const [isStarted, setIsStarted] = useState(initialState.isStarted);
   const thinkingRef = useRef('');
-  const [sessionId, setSessionId] = useState(null); // n8n 会话ID
+  const [sessionId, setSessionId] = useState(initialState.sessionId);
+
+  // 持久化状态到 sessionStorage
+  useEffect(() => {
+    const dataToSave = {
+      state,
+      messages,
+      isStarted,
+      sessionId,
+      timestamp: Date.now()
+    };
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      console.log('[Interview Machine] State saved to sessionStorage');
+    } catch (err) {
+      console.error('[Interview Machine] Failed to save state:', err);
+    }
+  }, [state, messages, isStarted, sessionId]);
 
   /**
    * 添加消息到UI
@@ -389,6 +446,13 @@ ${state.slots.find(s => s.key === state.current_focus_slot)?.description || '您
     setError(null);
     setIsStarted(false);
     setSessionId(null);
+    // 清除持久化存储
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+      console.log('[Interview Machine] State cleared from sessionStorage');
+    } catch (err) {
+      console.error('[Interview Machine] Failed to clear state:', err);
+    }
   }, []);
 
   /**

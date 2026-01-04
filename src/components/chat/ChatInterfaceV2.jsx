@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState } from 'react';
 import { MessageBubble } from './MessageBubble';
 import { InputArea } from './InputArea';
-import { MaterialDashboard } from './MaterialDashboard';
+import { MaterialDashboard } from '../common/MaterialDashboard';
 import { MobileTabNav } from './MobileTabNav';
-import { useInterviewMachine } from '../hooks/useInterviewMachine';
+import { useInterviewMachine } from '../../hooks/useInterviewMachine';
 import { Send, RotateCcw, CheckCircle2, ArrowLeft, Lightbulb, SkipForward } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
